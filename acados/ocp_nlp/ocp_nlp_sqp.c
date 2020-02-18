@@ -580,14 +580,6 @@ int ocp_nlp_sqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
 
     for (; sqp_iter < opts->max_iter; sqp_iter++)
     {
-		
-        if (opts->print_level > 0)
-        {
-            printf("\n------- sqp iter %d (max_iter %d) --------\n", 
-                sqp_iter, opts->max_iter);
-            if (opts->print_level > sqp_iter)
-                print_ocp_qp_in(nlp_mem->qp_in);
-        }
 
         // linearizate NLP and update QP matrices
         acados_tic(&timer1);
@@ -658,6 +650,14 @@ int ocp_nlp_sqp(void *config_, void *dims_, void *nlp_in_, void *nlp_out_,
             int tmp_int = 0;
             config->qp_solver->opts_set(config->qp_solver, opts->nlp_opts->qp_solver_opts,
                                          "warm_start", &tmp_int);
+        }
+
+        if (opts->print_level > 0)
+        {
+            printf("\n------- sqp iter %d (max_iter %d) --------\n", 
+                sqp_iter, opts->max_iter);
+            if (opts->print_level > sqp_iter)
+                print_ocp_qp_in(nlp_mem->qp_in);
         }
 
         // solve qp
