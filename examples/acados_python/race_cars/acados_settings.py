@@ -72,13 +72,13 @@ def acados_settings(Tf, N, track_file):
     ocp.dims.ny = ny
     ocp.dims.ny_e = ny_e
     ocp.dims.nbx = 1
-    ocp.dims.nsbx = 0
+    ocp.dims.nsbx = 1
     ocp.dims.nbu = nu
     ocp.dims.nu = nu
     ocp.dims.N = N
-    ocp.dims.nsh = 2
     ocp.dims.nh = constraint.expr.shape[0]
-    ocp.dims.ns = 2
+    ocp.dims.nsh = ocp.dims.nh
+    ocp.dims.ns = ocp.dims.nsh + ocp.dims.nsbx
 
     # set cost
     Q = np.diag([ 1e-1, 1e-8, 1e-8, 1e-8, 1e-3, 5e-3 ])
@@ -111,8 +111,8 @@ def acados_settings(Tf, N, track_file):
 
     ocp.cost.zl = 100 * np.ones((ocp.dims.ns,))
     ocp.cost.zu = 100 * np.ones((ocp.dims.ns,))
-    ocp.cost.Zl = 0 * np.ones((ocp.dims.ns,))
-    ocp.cost.Zu = 0 * np.ones((ocp.dims.ns,))
+    ocp.cost.Zl = 1 * np.ones((ocp.dims.ns,))
+    ocp.cost.Zu = 1 * np.ones((ocp.dims.ns,))
 
     # set intial references
     ocp.cost.yref = np.array([1, 0, 0, 0, 0, 0, 0, 0])
@@ -125,9 +125,11 @@ def acados_settings(Tf, N, track_file):
     ocp.constraints.lbu = np.array([model.dthrottle_min, model.ddelta_min])
     ocp.constraints.ubu = np.array([model.dthrottle_max, model.ddelta_max])
     ocp.constraints.idxbu = np.array([0, 1])
-    # ocp.constraints.lsbx=np.zero s([1])
-    # ocp.constraints.usbx=np.zeros([1])
-    # ocp.constraints.idxsbx=np.array([1])
+
+    ocp.constraints.lsbx = np.zeros([ocp.dims.nsbx])
+    ocp.constraints.usbx = np.zeros([ocp.dims.nsbx])
+    ocp.constraints.idxsbx = np.array(range(ocp.dims.nsbx))
+
     ocp.constraints.lh = np.array(
         [
             constraint.along_min,
@@ -148,7 +150,7 @@ def acados_settings(Tf, N, track_file):
     )
     ocp.constraints.lsh = np.zeros(ocp.dims.nsh)
     ocp.constraints.ush = np.zeros(ocp.dims.nsh)
-    ocp.constraints.idxsh = np.array([0, 2])
+    ocp.constraints.idxsh = np.array(range(ocp.dims.nsh))
 
     # set intial condition
     ocp.constraints.x0 = model.x0
@@ -157,13 +159,13 @@ def acados_settings(Tf, N, track_file):
     ocp.solver_options.tf = Tf
     # ocp.solver_options.qp_solver = 'FULL_CONDENSING_QPOASES'
     ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
-    ocp.solver_options.nlp_solver_type = "SQP_RTI"
+    ocp.solver_options.nlp_solver_type = "SQP"
     ocp.solver_options.hessian_approx = "GAUSS_NEWTON"
     ocp.solver_options.integrator_type = "ERK"
     ocp.solver_options.sim_method_num_stages = 4
     ocp.solver_options.sim_method_num_steps = 3
     # ocp.solver_options.nlp_solver_step_length = 0.05
-    # ocp.solver_options.nlp_solver_max_iter = 1000
+    ocp.solver_options.nlp_solver_max_iter = 200
     ocp.solver_options.tol = 1e-4
     # ocp.solver_options.nlp_solver_tol_comp = 1e-1
 
