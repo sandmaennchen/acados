@@ -162,10 +162,9 @@ def ocp_formulation_json_dump(acados_ocp, json_file='acados_ocp_nlp.json'):
     # strip symbolics
     ocp_nlp_dict['model'] = acados_model_strip_casadi_symbolics(ocp_nlp_dict['model'])
 
-    ocp_nlp_dict = format_ocp_dict(ocp_nlp_dict)
+    ocp_nlp_dict = format_class_dict(ocp_nlp_dict)
 
     dims_dict = acados_class2dict(acados_ocp.dims)
-    # format_ocp_dict( dict( deepcopy(acados_ocp.dims).__dict__ ) )
 
     ocp_check_json_against_layout(ocp_nlp_dict, dims_dict)
 

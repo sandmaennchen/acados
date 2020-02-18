@@ -105,7 +105,7 @@ def sim_formulation_json_dump(acados_sim, json_file='acados_sim.json'):
         sim_dict[key]=dict(getattr(acados_sim, key).__dict__)
 
     sim_dict['model'] = acados_model_strip_casadi_symbolics(sim_dict['model'])
-    sim_json = dict2json(sim_dict)
+    sim_json = format_class_dict(sim_dict)
 
     with open(json_file, 'w') as f:
         json.dump(sim_json, f, default=np_array_to_list, indent=4, sort_keys=True)
