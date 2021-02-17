@@ -340,6 +340,28 @@ void ocp_nlp_dynamics_cont_opts_set(void *config_, void *opts_, const char *fiel
 }
 
 
+void ocp_nlp_dynamics_cont_opts_get(void *config_, void *opts_, const char *field, void* value)
+{
+    ocp_nlp_dynamics_config *config = config_;
+    ocp_nlp_dynamics_cont_opts *opts = opts_;
+    sim_config *sim_config_ = config->sim_solver;
+
+    if (!strcmp(field, "compute_adj"))
+    {
+        int *int_ptr = value;
+        *int_ptr = opts->compute_adj;
+    }
+    else if (!strcmp(field, "compute_hess"))
+    {
+        int *int_ptr = value;
+        *int_ptr = opts->compute_hess;
+    }
+    else
+    {
+        sim_config_->opts_get(sim_config_, opts->sim_solver, field, value);
+    }
+}
+
 
 /************************************************
  * memory
@@ -556,6 +578,26 @@ void ocp_nlp_dynamics_cont_memory_set_z_alg_ptr(struct blasfeo_dvec *vec, void *
     return;
 }
 
+
+void ocp_nlp_dynamics_cont_memory_set(void *config_, void *dims_, void *mem_, const char *field, void* value)
+{
+    ocp_nlp_dynamics_config *config = config_;
+    ocp_nlp_dynamics_cont_dims *dims = dims_;
+    ocp_nlp_dynamics_cont_memory *mem = mem_;
+
+    sim_config *sim = config->sim_solver;
+
+    if (!strcmp(field, "W_chol") || !strcmp(field, "cost_fun") || !strcmp(field, "cost_hess") || !strcmp(field, "cost_grad")
+         || !strcmp(field, "y_ref"))
+    {
+        sim->memory_set(sim, dims->sim, mem->sim_solver, field, value);
+    }
+    else
+    {
+        printf("\nerror: ocp_nlp_dynamics_cont_memory_set: field %s not available\n", field);
+        exit(1);
+    }
+}
 
 
 void ocp_nlp_dynamics_cont_memory_get(void *config_, void *dims_, void *mem_, const char *field, void* value)
@@ -985,10 +1027,12 @@ void ocp_nlp_dynamics_cont_config_initialize_default(void *config_)
     config->opts_initialize_default = &ocp_nlp_dynamics_cont_opts_initialize_default;
     config->opts_update = &ocp_nlp_dynamics_cont_opts_update;
     config->opts_set = &ocp_nlp_dynamics_cont_opts_set;
+    config->opts_get = &ocp_nlp_dynamics_cont_opts_get;
     config->memory_calculate_size = &ocp_nlp_dynamics_cont_memory_calculate_size;
     config->memory_assign = &ocp_nlp_dynamics_cont_memory_assign;
     config->memory_get_fun_ptr = &ocp_nlp_dynamics_cont_memory_get_fun_ptr;
     config->memory_get_adj_ptr = &ocp_nlp_dynamics_cont_memory_get_adj_ptr;
+    config->memory_set = &ocp_nlp_dynamics_cont_memory_set;
     config->memory_set_ux_ptr = &ocp_nlp_dynamics_cont_memory_set_ux_ptr;
     config->memory_set_tmp_ux_ptr = &ocp_nlp_dynamics_cont_memory_set_tmp_ux_ptr;
     config->memory_set_ux1_ptr = &ocp_nlp_dynamics_cont_memory_set_ux1_ptr;
