@@ -160,6 +160,8 @@ double *ocp_nlp_cost_nls_memory_get_fun_ptr(void *memory_);
 //
 struct blasfeo_dvec *ocp_nlp_cost_nls_memory_get_grad_ptr(void *memory_);
 //
+struct blasfeo_dmat *ocp_nlp_cost_nls_memory_get_Wchol_ptr(void *memory_);
+//
 void ocp_nlp_cost_nls_memory_set_RSQrq_ptr(struct blasfeo_dmat *RSQrq, void *memory);
 //
 void ocp_nlp_cost_nls_memory_set_Z_ptr(struct blasfeo_dvec *Z, void *memory);

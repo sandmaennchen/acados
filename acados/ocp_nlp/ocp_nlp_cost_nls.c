@@ -510,6 +510,12 @@ double *ocp_nlp_cost_nls_memory_get_fun_ptr(void *memory_)
 }
 
 
+struct blasfeo_dmat *ocp_nlp_cost_nls_memory_get_Wchol_ptr(void *memory_)
+{
+    ocp_nlp_cost_nls_memory *memory = memory_;
+
+    return &memory->W_chol;
+}
 
 struct blasfeo_dvec *ocp_nlp_cost_nls_memory_get_grad_ptr(void *memory_)
 {
@@ -917,6 +923,7 @@ void ocp_nlp_cost_nls_config_initialize_default(void *config_)
     config->memory_assign = &ocp_nlp_cost_nls_memory_assign;
     config->memory_get_fun_ptr = &ocp_nlp_cost_nls_memory_get_fun_ptr;
     config->memory_get_grad_ptr = &ocp_nlp_cost_nls_memory_get_grad_ptr;
+    config->memory_get_Wchol_ptr = &ocp_nlp_cost_nls_memory_get_Wchol_ptr;
     config->memory_set_ux_ptr = &ocp_nlp_cost_nls_memory_set_ux_ptr;
     config->memory_set_tmp_ux_ptr = &ocp_nlp_cost_nls_memory_set_tmp_ux_ptr;
     config->memory_set_z_alg_ptr = &ocp_nlp_cost_nls_memory_set_z_alg_ptr;
