@@ -759,8 +759,8 @@ void ocp_nlp_cost_nls_update_qp_matrices(void *config_, void *dims_, void *model
         // printf("W\n");
         // blasfeo_print_dmat(ny, ny, &model->W, 0, 0);
 
-        // printf("res\n");
-        // blasfeo_print_dvec(ny, &memory->res, 0);
+        printf("res\n");
+        blasfeo_print_dvec(ny, &memory->res, 0);
 
         // tmp_ny = W * res
         blasfeo_dsymv_l(ny, ny, 1.0, &model->W, 0, 0, &memory->res, 0,
@@ -777,9 +777,11 @@ void ocp_nlp_cost_nls_update_qp_matrices(void *config_, void *dims_, void *model
         // printf("W_chol\n");
         // blasfeo_print_dmat(ny, ny, &memory->W_chol, 0, 0);
 
-        // printf("Jt\n");
-        // blasfeo_print_dmat(nu+nx, ny, &memory->Jt, 0, 0);
+        printf("Jt\n");
+        blasfeo_print_dmat(nu+nx, ny, &memory->Jt, 0, 0);
 
+        printf("grad Jt*W*res\n");
+        blasfeo_print_dvec(nu+nx, &memory->grad, 0);
 
         /* hessian */
         // gauss-newton component update
