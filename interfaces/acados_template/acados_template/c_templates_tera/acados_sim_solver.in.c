@@ -249,9 +249,9 @@ int {{ model.name }}_acados_sim_create()
 
     // sim opts
     {{ model.name }}_sim_opts = sim_opts_create({{ model.name }}_sim_config, {{ model.name }}_sim_dims);
-    int tmp_int = {{ solver_options.sim_method_num_stages }};
+    int tmp_int = {{ solver_options.sim_method_num_stages[0] }};
     sim_opts_set({{ model.name }}_sim_config, {{ model.name }}_sim_opts, "num_stages", &tmp_int);
-    tmp_int = {{ solver_options.sim_method_num_steps }};
+    tmp_int = {{ solver_options.sim_method_num_steps[0] }};
     sim_opts_set({{ model.name }}_sim_config, {{ model.name }}_sim_opts, "num_steps", &tmp_int);
     tmp_int = {{ solver_options.sim_method_newton_iter }};
     sim_opts_set({{ model.name }}_sim_config, {{ model.name }}_sim_opts, "newton_iter", &tmp_int);

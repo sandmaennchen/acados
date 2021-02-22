@@ -443,6 +443,31 @@ def make_ocp_dims_consistent(acados_ocp):
         raise Exception(f'Inconsistent discretization: {opts.tf}'\
             f' = tf != sum(opts.time_steps) = {tf}.')
 
+    # num_steps
+    if type(opts.sim_method_num_steps) == int:
+        opts.sim_method_num_steps = opts.sim_method_num_steps * np.ones((dims.N,), dtype=np.int64)
+    elif type(opts.sim_method_num_steps) == np.ndarray and opts.sim_method_num_steps.size == 1:
+        opts.sim_method_num_steps = opts.sim_method_num_steps.item() * np.ones((dims.N,), dtype=np.int64)
+    elif type(opts.sim_method_num_steps) == np.ndarray and opts.sim_method_num_steps.size == dims.N:
+        if not np.all(np.equal(np.mod(opts.sim_method_num_steps, 1), 0)):
+            raise Exception("sim_method_num_steps should be integers.")
+        opts.sim_method_num_steps = np.reshape(opts.sim_method_num_steps, (dims.N,)).astype(np.int64)
+    else:
+        raise Exception("Wrong value for sim_method_num_steps. Should be either int or array of size N")
+
+    # num_stages
+    if type(opts.sim_method_num_stages) == int:
+        opts.sim_method_num_stages = opts.sim_method_num_stages * np.ones((dims.N,), dtype=np.int64)
+    elif type(opts.sim_method_num_stages) == np.ndarray and opts.sim_method_num_stages.size == 1:
+        opts.sim_method_num_stages = opts.sim_method_num_stages.item() * np.ones((dims.N,), dtype=np.int64)
+    elif type(opts.sim_method_num_stages) == np.ndarray and opts.sim_method_num_stages.size == dims.N:
+        if not np.all(np.equal(np.mod(opts.sim_method_num_stages, 1), 0)):
+            raise Exception("sim_method_num_stages should be integers.")
+        opts.sim_method_num_stages = np.reshape(opts.sim_method_num_stages, (dims.N,)).astype(np.int64)
+    else:
+        raise Exception("Wrong value for sim_method_num_stages. Should be either int or array of size N")
+
+
 
 
 def get_ocp_nlp_layout():
