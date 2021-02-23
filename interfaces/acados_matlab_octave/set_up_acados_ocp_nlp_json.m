@@ -56,8 +56,8 @@ function ocp_json = set_up_acados_ocp_nlp_json(obj, simulink_opts)
         ocp_json.solver_options.integrator_type = 'GNSF';
     end
     % options
-    ocp_json.solver_options.sim_method_num_steps = obj.opts_struct.sim_method_num_steps;
-    ocp_json.solver_options.sim_method_num_stages = obj.opts_struct.sim_method_num_stages;
+    ocp_json.solver_options.sim_method_num_steps = obj.opts_struct.sim_method_num_steps * ones(1, obj.opts_struct.param_scheme_N);
+    ocp_json.solver_options.sim_method_num_stages = obj.opts_struct.sim_method_num_stages * ones(1, obj.opts_struct.param_scheme_N);
     ocp_json.solver_options.sim_method_newton_iter = obj.opts_struct.sim_method_newton_iter;
     ocp_json.solver_options.nlp_solver_max_iter = obj.opts_struct.nlp_solver_max_iter;
     ocp_json.solver_options.nlp_solver_tol_stat = obj.opts_struct.nlp_solver_tol_stat;
