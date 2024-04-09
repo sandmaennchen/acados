@@ -122,7 +122,7 @@ ACADOS_SYMBOL_EXPORT sim_solver *sim_assign(sim_config *config, void *dims, void
 //
 ACADOS_SYMBOL_EXPORT sim_solver *sim_solver_create(sim_config *config, void *dims, void *opts_);
 //
-ACADOS_SYMBOL_EXPORT void sim_solver_destroy(void *solver);
+ACADOS_SYMBOL_EXPORT void sim_solver_destroy(sim_solver *solver);
 //
 ACADOS_SYMBOL_EXPORT int sim_solve(sim_solver *solver, sim_in *in, sim_out *out);
 //
