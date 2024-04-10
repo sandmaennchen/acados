@@ -1688,6 +1688,15 @@ acados_size_t ocp_nlp_workspace_calculate_size(ocp_nlp_config *config, ocp_nlp_d
 
     size += 1 * blasfeo_memsize_dvec(np_max); //  tmp_nparam;
 
+    if (opts->with_solution_sens_wrt_params)
+    {
+        size += (N+1)*sizeof(struct blasfeo_dmat); // tmp_nvninx_np
+        for (int i = 0; i <= N; i++)
+        {
+            size += blasfeo_memsize_dmat(nv[i]+ni[i]+nx[i], np[i]);  // tmp_nvninx_np
+        }
+    }
+
     // array of pointers
     // cost
     size += (N+1)*sizeof(void *);
@@ -1805,7 +1814,7 @@ ocp_nlp_workspace *ocp_nlp_workspace_assign(ocp_nlp_config *config, ocp_nlp_dims
 
     int N = dims->N;
     int *nx = dims->nx;
-    // int *nv = dims->nv;
+    int *nv = dims->nv;
     int *nu = dims->nu;
     int *ni = dims->ni;
     // int *nz = dims->nz;
@@ -1858,9 +1867,23 @@ ocp_nlp_workspace *ocp_nlp_workspace_assign(ocp_nlp_config *config, ocp_nlp_dims
     work->weight_merit_fun = ocp_nlp_out_assign(config, dims, c_ptr);
     c_ptr += ocp_nlp_out_calculate_size(config, dims);
 
+    if (opts->with_solution_sens_wrt_params)
+    {
+        assign_and_advance_blasfeo_dmat_structs(N + 1, &work->tmp_nvninx_np, &c_ptr);
+    }
     assign_and_advance_double(nxu_max, &work->tmp_nxu_double, &c_ptr);
+
     // align for blasfeo mem
     align_char_to(64, &c_ptr);
+
+    // blasfeo_dmat
+    if (opts->with_solution_sens_wrt_params)
+    {
+        for (int i = 0; i <= N; i++)
+        {
+            assign_and_advance_blasfeo_dmat_mem(nv[i]+ni[i]+nx[i], np[i], work->tmp_nvninx_np+i, &c_ptr);
+        }
+    }
 
     // blasfeo_dvec
     assign_and_advance_blasfeo_dvec_mem(nxu_max, &work->tmp_nxu, &c_ptr);
