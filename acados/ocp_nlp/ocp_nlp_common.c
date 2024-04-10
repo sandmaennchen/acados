@@ -3393,6 +3393,7 @@ void ocp_nlp_common_eval_solution_sens_adj_p(ocp_nlp_config *config, ocp_nlp_dim
     d_ocp_qp_copy_all(mem->qp_in, tmp_qp_in);
     d_ocp_qp_set_rhs_zero(tmp_qp_in);
 
+    // TODO: set input!
     config->qp_solver->eval_sens(config->qp_solver, dims->qp_solver, tmp_qp_in, tmp_qp_out,
                             opts->qp_solver_opts, mem->qp_solver_mem, work->qp_work);
 
