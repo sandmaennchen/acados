@@ -355,6 +355,9 @@ typedef struct ocp_nlp_memory
     struct blasfeo_dvec *dyn_fun;
     struct blasfeo_dvec *dyn_adj;
 
+    // optimal value gradient wrt params
+    struct blasfeo_dvec out_np;
+
     double cost_value;
     int compute_hess;
 
@@ -396,7 +399,6 @@ typedef struct ocp_nlp_workspace
     struct blasfeo_dvec dxnext_dy;
     // optimal value gradient wrt params
     struct blasfeo_dvec tmp_np;
-    struct blasfeo_dvec out_np;
     // AS-RTI
     double *tmp_nxu_double;
 
