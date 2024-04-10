@@ -1331,7 +1331,7 @@ class AcadosOcpSolver:
         Set numerical data inside the solver.
 
             :param stage: integer corresponding to shooting node
-            :param field: string in ['x', 'u', 'pi', 'lam', 't', 'p', 'xdot_guess', 'z_guess']
+            :param field: string in ['x', 'u', 'pi', 'lam', 't', 'p', 'xdot_guess', 'z_guess', 'sens_x', 'sens_u']
 
             .. note:: regarding lam, t: \n
                     the inequalities are internally organized in the following order: \n
@@ -1348,6 +1348,7 @@ class AcadosOcpSolver:
         constraints_fields = ['lbx', 'ubx', 'lbu', 'ubu']
         out_fields = ['x', 'u', 'pi', 'lam', 't', 'z', 'sl', 'su']
         mem_fields = ['xdot_guess', 'z_guess']
+        sens_fields = ['sens_x', 'sens_u']
 
         if not isinstance(stage_, int):
             raise Exception('stage should be integer.')
@@ -1359,7 +1360,7 @@ class AcadosOcpSolver:
             value_ = np.array([value_])
         value_ = value_.astype(float)
 
-        field = field_.encode('utf-8')
+        field = field_.replace("sens_", "").encode('utf-8')
 
         stage = c_int(stage_)
 
@@ -1372,9 +1373,9 @@ class AcadosOcpSolver:
 
             assert getattr(self.shared_lib, f"{self.name}_acados_update_params")(self.capsule, stage, value_data, value_.shape[0])==0
         else:
-            if field_ not in constraints_fields + cost_fields + out_fields + mem_fields:
+            if field_ not in constraints_fields + cost_fields + out_fields + mem_fields + sens_fields:
                 raise Exception(f"AcadosOcpSolver.set(): '{field}' is not a valid argument.\n"
-                    f" Possible values are {constraints_fields + cost_fields + out_fields + mem_fields + ['p']}.")
+                    f" Possible values are {constraints_fields + cost_fields + out_fields + mem_fields + sens_fields + ['p']}.")
 
             dims = self.__acados_lib.ocp_nlp_dims_get_from_attr(self.nlp_config, \
                 self.nlp_dims, self.nlp_out, stage_, field)
@@ -1407,6 +1408,11 @@ class AcadosOcpSolver:
                     [c_void_p, c_void_p, c_int, c_char_p, c_void_p]
                 self.__acados_lib.ocp_nlp_set(self.nlp_config, \
                     self.nlp_solver, stage, field, value_data_p)
+            elif field_ in sens_fields:
+                self.__acados_lib.ocp_nlp_out_set.argtypes = \
+                    [c_void_p, c_void_p, c_void_p, c_int, c_char_p, c_void_p]
+                self.__acados_lib.ocp_nlp_out_set(self.nlp_config, \
+                    self.nlp_dims, self.sens_out, stage, field, value_data_p)
             # also set z_guess, when setting z.
             if field_ == 'z':
                 field = 'z_guess'.encode('utf-8')
@@ -1416,6 +1422,11 @@ class AcadosOcpSolver:
                     self.nlp_solver, stage, field, value_data_p)
         return
 
+
+    def reset_sens_out(self):
+        self.__acados_lib.ocp_nlp_out_set_values_to_zero.argtypes = \
+                    [c_void_p, c_void_p, c_void_p]
+        self.__acados_lib.ocp_nlp_out_set_values_to_zero(self.nlp_config, self.nlp_dims, self.sens_out)
 
     def cost_set(self, stage_: int, field_: str, value_, api='warn'):
         """
