@@ -3371,6 +3371,81 @@ void ocp_nlp_common_eval_param_sens(ocp_nlp_config *config, ocp_nlp_dims *dims,
     }
 }
 
+void ocp_nlp_common_eval_solution_sens_adj_p(ocp_nlp_config *config, ocp_nlp_dims *dims,
+                        ocp_nlp_opts *opts, ocp_nlp_memory *mem, ocp_nlp_workspace *work,
+                        char *field, int stage, int index, void *grad_p)
+{
+    int i;
+    int k;
+
+    int N = dims->N;
+    int *nv = dims->nv;
+    int *ni = dims->ni;
+    int *nu = dims->nu;
+    int *nx = dims->nx;
+    int *np = dims->np;
+
+    struct blasfeo_dmat * tmp_nvninx_np = work->tmp_nvninx_np;
+
+
+    ocp_qp_in *tmp_qp_in = work->tmp_qp_in;
+    ocp_qp_out *tmp_qp_out = work->tmp_qp_out;
+    d_ocp_qp_copy_all(mem->qp_in, tmp_qp_in);
+    d_ocp_qp_set_rhs_zero(tmp_qp_in);
+
+    config->qp_solver->eval_sens(config->qp_solver, dims->qp_solver, tmp_qp_in, tmp_qp_out,
+                            opts->qp_solver_opts, mem->qp_solver_mem, work->qp_work);
+
+    if (!strcmp("params_stage", field))
+    {
+        printf("\nerror: field %s at stage %d not available in ocp_nlp_sqp_eval_param_sens\n", field, stage);
+        exit(1);
+
+    }
+    else if (!strcmp("params_global", field))
+    {
+        // NOTE we assume that np is the same for all stages if params_global is used
+        blasfeo_dvecse(np[0], 0., &mem->out_np, 0);
+
+        for (i = 0; i < N; i++)
+        {
+            blasfeo_dgese(nv[i]+ni[i]+nx[i], np[i], 0., &tmp_nvninx_np[i], 0, 0);
+
+            for (k = 0; k < np[i]; k++)
+            {
+                config->dynamics[i]->memory_get_params_grad(config->dynamics[i], dims->dynamics[i], opts,
+                                        mem->dynamics[i], k, &tmp_qp_in->b[i], 0);
+                config->dynamics[i]->memory_get_params_lag_grad(config->dynamics[i], dims->dynamics[i], opts,
+                            mem->dynamics[i], k, &tmp_qp_in->rqz[i], 0);
+                config->cost[i]->memory_get_params_grad(config->cost[i], dims->cost[i], opts,
+                            mem->cost[i], k, &work->tmp_nxu, 0);
+                blasfeo_dvecad(nu[i] + nx[i], 1., &work->tmp_nxu, 0, &tmp_qp_in->rqz[i], 0);
+
+                // copy gradient to correct column in jacobian
+                blasfeo_dcolad(nx[i], 1.0, &tmp_qp_in->b[i], 0, &tmp_nvninx_np[i], nv[i]+ni[i], k);
+                blasfeo_dcolad(nx[i] + nu[i], 1.0, &tmp_qp_in->rqz[i], 0, &tmp_nvninx_np[i], 0, k);
+            }
+            // TODO multiply J.T with result of backsolve and add to in mem->out_np
+        }
+
+        blasfeo_dgese(nv[N]+ni[N]+nx[N], np[N], 0., &tmp_nvninx_np[N], 0, 0);
+        for (k = 0; k < np[i]; k++)
+        {
+            config->cost[N]->memory_get_params_grad(config->cost[N], dims->cost[N], opts,
+                            mem->cost[N], index, &work->tmp_nxu, 0);
+            blasfeo_dvecad(nu[N] + nx[N], 1., &work->tmp_nxu, 0, &tmp_qp_in->rqz[N], 0);
+            blasfeo_dcolad(nx[N] + nu[N], 1.0, &tmp_qp_in->rqz[N], 0, &tmp_nvninx_np[N], 0, k);
+        }
+        // TODO multiply J.T with result of backsolve and add to in mem->out_np
+
+    }
+    else
+    {
+        printf("\nerror: field %s at stage %d not available in ocp_nlp_sqp_eval_param_sens\n", field, stage);
+        exit(1);
+    }
+}
+
 
 void ocp_nlp_common_eval_lagr_grad_p(ocp_nlp_config *config, ocp_nlp_dims *dims, ocp_nlp_in *in,
                         ocp_nlp_opts *opts, ocp_nlp_memory *mem, ocp_nlp_workspace *work,
@@ -3378,8 +3453,6 @@ void ocp_nlp_common_eval_lagr_grad_p(ocp_nlp_config *config, ocp_nlp_dims *dims,
 {
     int i;
     int N = dims->N;
-    // int *nu = dims->nu;
-    // int *nx = dims->nx;
     int *np = dims->np;
 
     if (!strcmp("params_stage", field))
