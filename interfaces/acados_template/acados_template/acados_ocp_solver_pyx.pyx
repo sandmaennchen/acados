@@ -246,7 +246,6 @@ cdef class AcadosOcpSolverCython:
 
 
 
-    # TODO: rename to get_and_eval_? since we now perform computations in this function.
     def eval_and_get_optimal_value_gradient(self, with_respect_to: str = "initial_state") -> np.ndarray:
         """
         Returns the gradient of the optimal value function w.r.t. what is specified in `with_respect_to`.
