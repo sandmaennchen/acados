@@ -3431,37 +3431,37 @@ void ocp_nlp_common_eval_solution_sens_adj_p(ocp_nlp_config *config, ocp_nlp_dim
             {
                 config->dynamics[i]->memory_get_params_grad(config->dynamics[i], dims->dynamics[i], opts,
                                         mem->dynamics[i], k, &tmp_qp_in->b[i], 0);
+
                 config->dynamics[i]->memory_get_params_lag_grad(config->dynamics[i], dims->dynamics[i], opts,
                             mem->dynamics[i], k, &tmp_qp_in->rqz[i], 0);
                 config->cost[i]->memory_get_params_grad(config->cost[i], dims->cost[i], opts,
                             mem->cost[i], k, &work->tmp_nxu, 0);
                 blasfeo_dvecad(nv[i], 1., &work->tmp_nxu, 0, &tmp_qp_in->rqz[i], 0);
 
-                // copy gradient to correct column in jacobian
-                blasfeo_dcolad(nx[i], 1.0, &tmp_qp_in->b[i], 0, &tmp_nvninx_np[i], nv[i]+ni[i], k);
-                blasfeo_dcolad(nx[i] + nu[i], 1.0, &tmp_qp_in->rqz[i], 0, &tmp_nvninx_np[i], 0, k);
+                // copy gradient to column in jacobian
+                blasfeo_dcolad(nx[i+1], 1.0, &tmp_qp_in->b[i], 0, &tmp_nvninx_np[i], nv[i]+ni[i], k);
+                blasfeo_dcolad(nv[i], 1.0, &tmp_qp_in->rqz[i], 0, &tmp_nvninx_np[i], 0, k);
             }
-            // TODO multiply J.T with result of backsolve and add to in mem->out_np
+
+            // multiply J.T with result of backsolve and add to in mem->out_np
             blasfeo_dgemv_t(nv[i], np[i], 1.0, &tmp_nvninx_np[i], 0, 0, tmp_qp_out->ux+i, 0, 1.0, &mem->out_np, 0, &mem->out_np, 0);
             blasfeo_dgemv_t(ni[i], np[i], 1.0, &tmp_nvninx_np[i], nv[i], 0, tmp_qp_out->lam+i, 0, 1.0, &mem->out_np, 0, &mem->out_np, 0);
             blasfeo_dgemv_t(nx[i+1], np[i], 1.0, &tmp_nvninx_np[i], nv[i]+ni[i], 0, tmp_qp_out->pi+i, 0, 1.0, &mem->out_np, 0, &mem->out_np, 0);
         }
 
-        blasfeo_dgese(nv[N]+ni[N], np[N], 0., &tmp_nvninx_np[N], 0, 0);
+        i = N;
+        blasfeo_dgese(nv[i]+ni[i], np[i], 0., &tmp_nvninx_np[i], 0, 0);
         for (k = 0; k < np[i]; k++)
         {
-            config->cost[N]->memory_get_params_grad(config->cost[N], dims->cost[N], opts,
-                            mem->cost[N], k, &work->tmp_nxu, 0);
-            blasfeo_dvecad(nu[N] + nx[N], 1., &work->tmp_nxu, 0, &tmp_qp_in->rqz[N], 0);
-            blasfeo_dcolad(nx[N] + nu[N], 1.0, &tmp_qp_in->rqz[N], 0, &tmp_nvninx_np[N], 0, k);
+            config->cost[i]->memory_get_params_grad(config->cost[i], dims->cost[i], opts,
+                            mem->cost[i], k, &tmp_qp_in->rqz[i], 0);
+            blasfeo_dcolad(nv[i], 1., &tmp_qp_in->rqz[i], 0, &tmp_nvninx_np[i], 0, k);
         }
-        // TODO multiply J.T with result of backsolve and add to in mem->out_np
-        i = N;
+        // multiply J.T with result of backsolve and add to in mem->out_np
         blasfeo_dgemv_t(nv[i], np[i], 1.0, &tmp_nvninx_np[i], 0, 0, tmp_qp_out->ux+i, 0, 1.0, &mem->out_np, 0, &mem->out_np, 0);
         blasfeo_dgemv_t(ni[i], np[i], 1.0, &tmp_nvninx_np[i], nv[i], 0, tmp_qp_out->lam+i, 0, 1.0, &mem->out_np, 0, &mem->out_np, 0);
-
         // unpack
-        blasfeo_unpack_dvec(np[0], &mem->out_np, 0, grad_p, 0);
+        blasfeo_unpack_dvec(np[0], &mem->out_np, 0, grad_p, 1);
     }
     else
     {
