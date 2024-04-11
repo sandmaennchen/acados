@@ -781,7 +781,6 @@ class AcadosOcpSolver:
         self.__acados_lib.ocp_nlp_eval_params_jac(self.nlp_solver, self.nlp_in, self.nlp_out)
         self.time_solution_sens_lin = time.time() - t0
 
-
         # set seed:
         if not stages_is_list:
             seed_x = [seed_x]
@@ -792,17 +791,17 @@ class AcadosOcpSolver:
             self.set(stage, 'sens_x', x_seed.flatten())
             self.set(stage, 'sens_u', u_seed.flatten())
 
-
         if with_respect_to == "params_global":
             nparam = self.__acados_lib.ocp_nlp_dims_get_from_attr(self.nlp_config, self.nlp_dims, self.nlp_out, 0, "p".encode('utf-8'))
 
-            ngrad = nparam
             field = "params_global".encode('utf-8')
             grad = np.zeros((nparam,))
             grad_p = np.ascontiguousarray(grad, dtype=np.float64)
             c_grad_p = cast(grad_p.ctypes.data, POINTER(c_double))
 
+            self.time_solution_sens_solve = 0.0
             self.__acados_lib.ocp_nlp_eval_solution_sens_adj_p(self.nlp_solver, self.nlp_in, self.sens_out, field, 0, c_grad_p)
+            self.time_solution_sens_solve += self.get_stats("time_solution_sensitivities")
 
             return grad_p
 
