@@ -99,13 +99,9 @@ def main(qp_solver_ric_alg: int, use_cython=False, generate_solvers=True):
             sens_u1_seed @ sens_u_forw[1]
 
     # set adjoint seed
-    sensitivity_solver.reset_sens_out()
-    sensitivity_solver.set(0, 'sens_x', sens_x0_seed.flatten())
-    sensitivity_solver.set(0, 'sens_u', sens_u0_seed.flatten())
-    sensitivity_solver.set(1, 'sens_x', sens_x1_seed.flatten())
-    sensitivity_solver.set(1, 'sens_u', sens_u1_seed.flatten())
-
-    adj_p = sensitivity_solver.eval_adjoint_solution_sensitivity()
+    adj_p = sensitivity_solver.eval_adjoint_solution_sensitivity(stages=[0, 1],
+                            seed_x=[sens_x0_seed, sens_x1_seed],
+                            seed_u=[sens_u0_seed, sens_u1_seed])
 
     print(f"{adj_p=} {adj_p_ref=}")
     if not np.allclose(adj_p, adj_p_ref, atol=1e-7):
