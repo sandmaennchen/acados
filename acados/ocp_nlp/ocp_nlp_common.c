@@ -1691,10 +1691,11 @@ acados_size_t ocp_nlp_workspace_calculate_size(ocp_nlp_config *config, ocp_nlp_d
     if (opts->with_solution_sens_wrt_params)
     {
         size += (N+1)*sizeof(struct blasfeo_dmat); // tmp_nvninx_np
-        for (int i = 0; i <= N; i++)
+        for (int i = 0; i < N; i++)
         {
-            size += blasfeo_memsize_dmat(nv[i]+ni[i]+nx[i], np[i]);  // tmp_nvninx_np
+            size += blasfeo_memsize_dmat(nv[i]+ni[i]+nx[i+1], np[i]);  // tmp_nvninx_np
         }
+        size += blasfeo_memsize_dmat(nv[N]+ni[N], np[N]);  // tmp_nvninx_np_N
     }
 
     // array of pointers
@@ -1879,10 +1880,11 @@ ocp_nlp_workspace *ocp_nlp_workspace_assign(ocp_nlp_config *config, ocp_nlp_dims
     // blasfeo_dmat
     if (opts->with_solution_sens_wrt_params)
     {
-        for (int i = 0; i <= N; i++)
+        for (int i = 0; i < N; i++)
         {
             assign_and_advance_blasfeo_dmat_mem(nv[i]+ni[i]+nx[i], np[i], work->tmp_nvninx_np+i, &c_ptr);
         }
+        assign_and_advance_blasfeo_dmat_mem(nv[N]+ni[N], np[N], work->tmp_nvninx_np+N, &c_ptr);
     }
 
     // blasfeo_dvec
@@ -3373,7 +3375,7 @@ void ocp_nlp_common_eval_param_sens(ocp_nlp_config *config, ocp_nlp_dims *dims,
 
 void ocp_nlp_common_eval_solution_sens_adj_p(ocp_nlp_config *config, ocp_nlp_dims *dims,
                         ocp_nlp_opts *opts, ocp_nlp_memory *mem, ocp_nlp_workspace *work,
-                        char *field, int stage, int index, void *grad_p)
+                        ocp_nlp_out *sens_nlp_out, char *field, int stage, void *grad_p)
 {
     int i;
     int k;
@@ -3385,23 +3387,36 @@ void ocp_nlp_common_eval_solution_sens_adj_p(ocp_nlp_config *config, ocp_nlp_dim
     int *nx = dims->nx;
     int *np = dims->np;
 
-    struct blasfeo_dmat * tmp_nvninx_np = work->tmp_nvninx_np;
-
+    struct blasfeo_dmat *tmp_nvninx_np = work->tmp_nvninx_np;
 
     ocp_qp_in *tmp_qp_in = work->tmp_qp_in;
     ocp_qp_out *tmp_qp_out = work->tmp_qp_out;
     d_ocp_qp_copy_all(mem->qp_in, tmp_qp_in);
     d_ocp_qp_set_rhs_zero(tmp_qp_in);
 
-    // TODO: set input!
+    /* copy sens_nlp_out to tmp_qp_in */
+    for (i = 0; i <= N; i++)
+    {
+        blasfeo_dveccp(nv[i], sens_nlp_out->ux + i, 0, tmp_qp_in->rqz + i, 0);
+
+        // NOTE: noone needs sensitivities in adj dir pi, lam, t wrt. p
+        // if (i < N)
+        //     blasfeo_dveccp(nx[i + 1], sens_nlp_out->pi + i, 0, tmp_qp_in->b + i, 0);
+        // blasfeo_dveccp(2 * ni[i], sens_nlp_out->lam + i, ?);
+        // blasfeo_dveccp(2 * ni[i], sens_nlp_out->t + i, ?);
+    }
+
     config->qp_solver->eval_sens(config->qp_solver, dims->qp_solver, tmp_qp_in, tmp_qp_out,
                             opts->qp_solver_opts, mem->qp_solver_mem, work->qp_work);
+
+    // set tmp_qp_in back to zero.
+    d_ocp_qp_set_rhs_zero(tmp_qp_in);
+
 
     if (!strcmp("params_stage", field))
     {
         printf("\nerror: field %s at stage %d not available in ocp_nlp_sqp_eval_param_sens\n", field, stage);
         exit(1);
-
     }
     else if (!strcmp("params_global", field))
     {
@@ -3410,7 +3425,7 @@ void ocp_nlp_common_eval_solution_sens_adj_p(ocp_nlp_config *config, ocp_nlp_dim
 
         for (i = 0; i < N; i++)
         {
-            blasfeo_dgese(nv[i]+ni[i]+nx[i], np[i], 0., &tmp_nvninx_np[i], 0, 0);
+            blasfeo_dgese(nv[i]+ni[i]+nx[i+1], np[i], 0., &tmp_nvninx_np[i], 0, 0);
 
             for (k = 0; k < np[i]; k++)
             {
@@ -3420,25 +3435,33 @@ void ocp_nlp_common_eval_solution_sens_adj_p(ocp_nlp_config *config, ocp_nlp_dim
                             mem->dynamics[i], k, &tmp_qp_in->rqz[i], 0);
                 config->cost[i]->memory_get_params_grad(config->cost[i], dims->cost[i], opts,
                             mem->cost[i], k, &work->tmp_nxu, 0);
-                blasfeo_dvecad(nu[i] + nx[i], 1., &work->tmp_nxu, 0, &tmp_qp_in->rqz[i], 0);
+                blasfeo_dvecad(nv[i], 1., &work->tmp_nxu, 0, &tmp_qp_in->rqz[i], 0);
 
                 // copy gradient to correct column in jacobian
                 blasfeo_dcolad(nx[i], 1.0, &tmp_qp_in->b[i], 0, &tmp_nvninx_np[i], nv[i]+ni[i], k);
                 blasfeo_dcolad(nx[i] + nu[i], 1.0, &tmp_qp_in->rqz[i], 0, &tmp_nvninx_np[i], 0, k);
             }
             // TODO multiply J.T with result of backsolve and add to in mem->out_np
+            blasfeo_dgemv_t(nv[i], np[i], 1.0, &tmp_nvninx_np[i], 0, 0, tmp_qp_out->ux+i, 0, 1.0, &mem->out_np, 0, &mem->out_np, 0);
+            blasfeo_dgemv_t(ni[i], np[i], 1.0, &tmp_nvninx_np[i], nv[i], 0, tmp_qp_out->lam+i, 0, 1.0, &mem->out_np, 0, &mem->out_np, 0);
+            blasfeo_dgemv_t(nx[i+1], np[i], 1.0, &tmp_nvninx_np[i], nv[i]+ni[i], 0, tmp_qp_out->pi+i, 0, 1.0, &mem->out_np, 0, &mem->out_np, 0);
         }
 
-        blasfeo_dgese(nv[N]+ni[N]+nx[N], np[N], 0., &tmp_nvninx_np[N], 0, 0);
+        blasfeo_dgese(nv[N]+ni[N], np[N], 0., &tmp_nvninx_np[N], 0, 0);
         for (k = 0; k < np[i]; k++)
         {
             config->cost[N]->memory_get_params_grad(config->cost[N], dims->cost[N], opts,
-                            mem->cost[N], index, &work->tmp_nxu, 0);
+                            mem->cost[N], k, &work->tmp_nxu, 0);
             blasfeo_dvecad(nu[N] + nx[N], 1., &work->tmp_nxu, 0, &tmp_qp_in->rqz[N], 0);
             blasfeo_dcolad(nx[N] + nu[N], 1.0, &tmp_qp_in->rqz[N], 0, &tmp_nvninx_np[N], 0, k);
         }
         // TODO multiply J.T with result of backsolve and add to in mem->out_np
+        i = N;
+        blasfeo_dgemv_t(nv[i], np[i], 1.0, &tmp_nvninx_np[i], 0, 0, tmp_qp_out->ux+i, 0, 1.0, &mem->out_np, 0, &mem->out_np, 0);
+        blasfeo_dgemv_t(ni[i], np[i], 1.0, &tmp_nvninx_np[i], nv[i], 0, tmp_qp_out->lam+i, 0, 1.0, &mem->out_np, 0, &mem->out_np, 0);
 
+        // unpack
+        blasfeo_unpack_dvec(np[0], &mem->out_np, 0, grad_p, 0);
     }
     else
     {
