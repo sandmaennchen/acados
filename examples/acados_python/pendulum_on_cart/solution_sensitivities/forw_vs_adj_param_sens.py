@@ -32,7 +32,7 @@ import numpy as np
 from acados_template import AcadosOcpSolver
 from sensitivity_utils import export_parametric_ocp
 
-def main(qp_solver_ric_alg: int, use_cython=False):
+def main(qp_solver_ric_alg: int, use_cython=False, generate_solvers=True):
     """
     Evaluate policy and calculate its gradient for the pendulum on a cart with a parametric model.
     """
@@ -54,7 +54,7 @@ def main(qp_solver_ric_alg: int, use_cython=False):
         AcadosOcpSolver.build(ocp.code_export_directory, with_cython=True)
         acados_ocp_solver = AcadosOcpSolver.create_cython_solver("parameter_augmented_acados_ocp.json")
     else:
-        acados_ocp_solver = AcadosOcpSolver(ocp, json_file="parameter_augmented_acados_ocp.json")
+        acados_ocp_solver = AcadosOcpSolver(ocp, json_file="parameter_augmented_acados_ocp.json", generate=generate_solvers, build=generate_solvers)
 
     # create sensitivity solver
     ocp = export_parametric_ocp(x0=x0, N_horizon=N_horizon, T_horizon=T_horizon, Fmax=Fmax, hessian_approx='EXACT', qp_solver_ric_alg=qp_solver_ric_alg)
@@ -65,7 +65,7 @@ def main(qp_solver_ric_alg: int, use_cython=False):
         AcadosOcpSolver.build(ocp.code_export_directory, with_cython=True)
         sensitivity_solver = AcadosOcpSolver.create_cython_solver(f"{ocp.model.name}.json")
     else:
-        sensitivity_solver = AcadosOcpSolver(ocp, json_file=f"{ocp.model.name}.json")
+        sensitivity_solver = AcadosOcpSolver(ocp, json_file=f"{ocp.model.name}.json", generate=generate_solvers, build=generate_solvers)
 
     p_val = np.array([p_test])
 
@@ -84,16 +84,16 @@ def main(qp_solver_ric_alg: int, use_cython=False):
 
     # adjoint direction
     sens_x0_seed = np.zeros((1, nx))
-    sens_x0_seed[0, 0] = 1
+    sens_x0_seed[0, 0] = -8
     sens_x1_seed = sens_x0_seed.copy()
     sens_u0_seed = np.zeros((1, nu))
-    sens_u0_seed[0, 0] = 1
+    sens_u0_seed[0, 0] = 42
     sens_u1_seed = sens_u0_seed.copy()
 
     # Calculate the policy gradient
     sens_x_forw, sens_u_forw = sensitivity_solver.eval_solution_sensitivity([0, 1], "params_global")
 
-    adj_p = sens_x0_seed @ sens_x_forw[0] + \
+    adj_p_ref = sens_x0_seed @ sens_x_forw[0] + \
             sens_x1_seed @ sens_x_forw[1] + \
             sens_u0_seed @ sens_u_forw[0] + \
             sens_u1_seed @ sens_u_forw[1]
@@ -103,10 +103,13 @@ def main(qp_solver_ric_alg: int, use_cython=False):
     sensitivity_solver.set(0, 'sens_x', sens_x0_seed.flatten())
     sensitivity_solver.set(0, 'sens_u', sens_u0_seed.flatten())
     sensitivity_solver.set(1, 'sens_x', sens_x1_seed.flatten())
+    sensitivity_solver.set(1, 'sens_u', sens_u1_seed.flatten())
 
-    # breakpoint()
-    # TODO: evalute adjoint of solution sensitivity wrt params.
-    # TODO: compare wrt adj_p
+    adj_p = sensitivity_solver.eval_adjoint_solution_sensitivity()
+
+    print(f"{adj_p=} {adj_p_ref=}")
+    if not np.allclose(adj_p, adj_p_ref, atol=1e-7):
+        raise Exception("adj_p and adj_p_ref should match.")
 
 if __name__ == "__main__":
-    main(qp_solver_ric_alg=0, use_cython=False)
+    main(qp_solver_ric_alg=0, use_cython=False, generate_solvers=False)
