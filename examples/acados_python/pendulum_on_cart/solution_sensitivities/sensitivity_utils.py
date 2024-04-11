@@ -74,12 +74,16 @@ def export_pendulum_ode_model_with_mass_as_param(dt) -> AcadosModel:
 
 def export_parametric_ocp(
     x0=np.array([0.0, np.pi / 6, 0.0, 0.0]), N_horizon=50, T_horizon=2.0, Fmax=80.0,
-    hessian_approx = "GAUSS_NEWTON", qp_solver_ric_alg=1
+    hessian_approx = "GAUSS_NEWTON", qp_solver_ric_alg=1,
+    cost_scale_as_param=False
 ) -> AcadosOcp:
 
     ocp = AcadosOcp()
     dt = T_horizon/N_horizon
     ocp.model = export_pendulum_ode_model_with_mass_as_param(dt=dt)
+
+    # set mass to one
+    ocp.parameter_values = np.ones((1,))
 
     ocp.dims.N = N_horizon
 
@@ -89,18 +93,25 @@ def export_parametric_ocp(
     ocp.cost.cost_type = "EXTERNAL"
     ocp.cost.cost_type_e = "EXTERNAL"
 
+    if cost_scale_as_param:
+        # add parameter to model
+        cost_scale_param = ca.SX.sym('cost_scale_param')
+        ocp.model.p = ca.vertcat(ocp.model.p, cost_scale_param)
+        ocp.parameter_values = np.concatenate((ocp.parameter_values, np.ones((1,))))
+        # add nonlinear dependency in cost
+        cost_scale_factor = ca.exp(cost_scale_param)
+    else:
+        cost_scale_factor = ca.exp(ocp.model.p)
+
     # NOTE here we make the cost parametric
-    ocp.model.cost_expr_ext_cost = ca.exp(ocp.model.p) * ocp.model.x.T @ Q_mat @ ocp.model.x + ocp.model.u.T @ R_mat @ ocp.model.u
-    ocp.model.cost_expr_ext_cost_e = ca.exp(ocp.model.p) * ocp.model.x.T @ Q_mat @ ocp.model.x
+    ocp.model.cost_expr_ext_cost = cost_scale_factor * ocp.model.x.T @ Q_mat @ ocp.model.x + ocp.model.u.T @ R_mat @ ocp.model.u
+    ocp.model.cost_expr_ext_cost_e = cost_scale_factor * ocp.model.x.T @ Q_mat @ ocp.model.x
 
     ocp.constraints.lbu = np.array([-Fmax])
     ocp.constraints.ubu = np.array([+Fmax])
     ocp.constraints.idxbu = np.array([0])
 
     ocp.constraints.x0 = x0
-
-    # set mass to one
-    ocp.parameter_values = np.ones((1,))
 
     ocp.solver_options.qp_solver = "PARTIAL_CONDENSING_HPIPM"
     ocp.solver_options.integrator_type = "DISCRETE"

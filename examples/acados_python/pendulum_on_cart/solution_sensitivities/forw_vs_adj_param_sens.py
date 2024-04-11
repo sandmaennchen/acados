@@ -47,7 +47,9 @@ def main(qp_solver_ric_alg: int, use_cython=False, generate_solvers=True):
     T_horizon = 2.0
     Fmax = 80.0
 
-    ocp = export_parametric_ocp(x0=x0, N_horizon=N_horizon, T_horizon=T_horizon, Fmax=Fmax, qp_solver_ric_alg=1)
+    cost_scale_as_param = True # test with 2 parameters
+
+    ocp = export_parametric_ocp(x0=x0, N_horizon=N_horizon, T_horizon=T_horizon, Fmax=Fmax, qp_solver_ric_alg=1, cost_scale_as_param=cost_scale_as_param)
     if use_cython:
         raise NotImplementedError()
         AcadosOcpSolver.generate(ocp, json_file="parameter_augmented_acados_ocp.json")
@@ -57,7 +59,7 @@ def main(qp_solver_ric_alg: int, use_cython=False, generate_solvers=True):
         acados_ocp_solver = AcadosOcpSolver(ocp, json_file="parameter_augmented_acados_ocp.json", generate=generate_solvers, build=generate_solvers)
 
     # create sensitivity solver
-    ocp = export_parametric_ocp(x0=x0, N_horizon=N_horizon, T_horizon=T_horizon, Fmax=Fmax, hessian_approx='EXACT', qp_solver_ric_alg=qp_solver_ric_alg)
+    ocp = export_parametric_ocp(x0=x0, N_horizon=N_horizon, T_horizon=T_horizon, Fmax=Fmax, hessian_approx='EXACT', qp_solver_ric_alg=qp_solver_ric_alg, cost_scale_as_param=cost_scale_as_param)
     ocp.model.name = 'sensitivity_solver'
     ocp.code_export_directory = f'c_generated_code_{ocp.model.name}'
     if use_cython:
@@ -67,7 +69,7 @@ def main(qp_solver_ric_alg: int, use_cython=False, generate_solvers=True):
     else:
         sensitivity_solver = AcadosOcpSolver(ocp, json_file=f"{ocp.model.name}.json", generate=generate_solvers, build=generate_solvers)
 
-    p_val = np.array([p_test])
+    p_val = np.array([p_test, 1.0])
 
     for n in range(N_horizon+1):
         acados_ocp_solver.set(n, 'p', p_val)
@@ -83,10 +85,10 @@ def main(qp_solver_ric_alg: int, use_cython=False, generate_solvers=True):
         breakpoint()
 
     # adjoint direction
-    sens_x0_seed = np.zeros((1, nx))
+    sens_x0_seed = np.ones((1, nx))
     sens_x0_seed[0, 0] = -8
     sens_x1_seed = sens_x0_seed.copy()
-    sens_u0_seed = np.zeros((1, nu))
+    sens_u0_seed = np.ones((1, nu))
     sens_u0_seed[0, 0] = 42
     sens_u1_seed = sens_u0_seed.copy()
 
@@ -106,6 +108,8 @@ def main(qp_solver_ric_alg: int, use_cython=False, generate_solvers=True):
     print(f"{adj_p=} {adj_p_ref=}")
     if not np.allclose(adj_p, adj_p_ref, atol=1e-7):
         raise Exception("adj_p and adj_p_ref should match.")
+    else:
+        print("Success: adj_p and adj_p_ref match!")
 
 if __name__ == "__main__":
-    main(qp_solver_ric_alg=0, use_cython=False, generate_solvers=False)
+    main(qp_solver_ric_alg=0, use_cython=False, generate_solvers=True)
