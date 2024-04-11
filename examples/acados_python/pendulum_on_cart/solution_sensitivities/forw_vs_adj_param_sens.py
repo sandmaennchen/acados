@@ -84,28 +84,42 @@ def main(qp_solver_ric_alg: int, use_cython=False, generate_solvers=True):
     if sensitivity_solver.get_status() not in [0, 2]:
         breakpoint()
 
-    # adjoint direction
-    sens_x0_seed = np.ones((1, nx))
-    sens_x0_seed[0, 0] = -8
-    sens_x1_seed = sens_x0_seed.copy()
-    sens_u0_seed = np.ones((1, nu))
-    sens_u0_seed[0, 0] = 42
-    sens_u1_seed = sens_u0_seed.copy()
+    # adjoint direction for one stage
+    seed_xstage = np.ones((1, nx))
+    seed_xstage[0, 0] = -8
+    seed_ustage = np.ones((1, nu))
+    seed_ustage[0, 0] = 42
 
-    # Calculate the policy gradient
-    sens_x_forw, sens_u_forw = sensitivity_solver.eval_solution_sensitivity([0, 1], "params_global")
+    # test different settings forward vs. adjoint
+    for stages, seed_x, seed_u in [
+        ([0, 1], [seed_xstage, seed_xstage], [seed_ustage, seed_ustage]),
+        ([0, 3], [seed_xstage, seed_xstage], [seed_ustage, seed_ustage]),
+        ([0], [seed_xstage], [seed_ustage]),
+        ([5], [seed_xstage], [seed_ustage]),
+    ]:
+        # Calculate the policy gradient
+        sens_x_forw, sens_u_forw = sensitivity_solver.eval_solution_sensitivity(stages, "params_global")
 
-    adj_p_ref = sens_x0_seed @ sens_x_forw[0] + \
-            sens_x1_seed @ sens_x_forw[1] + \
-            sens_u0_seed @ sens_u_forw[0] + \
-            sens_u1_seed @ sens_u_forw[1]
+        adj_p_ref = sum([seed_x[k] @ sens_x_forw[k] + seed_u[k] @ sens_u_forw[k] for k in range(len(stages))])
 
-    # set adjoint seed
-    adj_p = sensitivity_solver.eval_adjoint_solution_sensitivity(stages=[0, 1],
-                            seed_x=[sens_x0_seed, sens_x1_seed],
-                            seed_u=[sens_u0_seed, sens_u1_seed])
+        # compute adjoint solution sensitivity
+        adj_p = sensitivity_solver.eval_adjoint_solution_sensitivity(stages=stages,
+                                                    seed_x=seed_x,
+                                                    seed_u=seed_u)
 
-    print(f"{adj_p=} {adj_p_ref=}")
+        print(f"{adj_p=} {adj_p_ref=}")
+        if not np.allclose(adj_p, adj_p_ref, atol=1e-7):
+            raise Exception("adj_p and adj_p_ref should match.")
+        else:
+            print("Success: adj_p and adj_p_ref match!")
+
+    # test with list vs. single stage API
+    adj_p_ref = sensitivity_solver.eval_adjoint_solution_sensitivity(stages=[0],
+                                            seed_x=[seed_xstage],
+                                            seed_u=[seed_ustage])
+    adj_p = sensitivity_solver.eval_adjoint_solution_sensitivity(stages=0,
+                                            seed_x=seed_xstage,
+                                            seed_u=seed_ustage)
     if not np.allclose(adj_p, adj_p_ref, atol=1e-7):
         raise Exception("adj_p and adj_p_ref should match.")
     else:
