@@ -406,6 +406,9 @@ def main_parametric(qp_solver_ric_alg: int = 0, chain_params_: dict = get_chain_
     x0 = np.zeros((ocp.dims.nx, 1))
     x0[: 3 * (M + 1) : 3] = pos0_x[1:].reshape((M + 1, 1))
 
+    nx = ocp.dims.nx
+    nu = ocp.dims.nu
+
     np_test = 100
 
     # p_label = "L_2_0"
@@ -425,6 +428,7 @@ def main_parametric(qp_solver_ric_alg: int = 0, chain_params_: dict = get_chain_
     timings_lin_and_factorize = np.zeros((np_test))
     timings_lin_params = np.zeros((np_test))
     timings_solve_params = np.zeros((np_test))
+    timings_solve_params_adj = np.zeros((np_test))
 
     for i in range(np_test):
         parameter_values.cat[p_idx] = p_var[i]
@@ -447,18 +451,36 @@ def main_parametric(qp_solver_ric_alg: int = 0, chain_params_: dict = get_chain_
         print(f"sensitivity_solver status {sensitivity_solver.status}")
 
         # Calculate the policy gradient
-        _, sens_u_ = sensitivity_solver.eval_solution_sensitivity(0, "params_global")
+        sens_x_, sens_u_ = sensitivity_solver.eval_solution_sensitivity(0, "params_global")
         timings_lin_params[i] = sensitivity_solver.get_stats("time_solution_sens_lin")
         timings_solve_params[i] = sensitivity_solver.get_stats("time_solution_sens_solve")
 
+        seed_x = np.ones((nx, 1))
+        seed_u = np.ones((nu, 1))
+
+        sens_adj = sensitivity_solver.eval_adjoint_solution_sensitivity(seed_x=seed_x, seed_u=seed_u, stages=0)
+        timings_solve_params_adj[i] = sensitivity_solver.get_stats("time_solution_sens_solve")
+
+        sens_adj_ref = seed_u.T @ sens_u_ + seed_x.T @ sens_x_
+
+        assert np.allclose(sens_adj_ref.ravel(), sens_adj)
+        # print(np.abs(sens_adj_ref.ravel() -  sens_adj))
+
         sens_u.append(sens_u_[:, p_idx])
 
-    timing_results = {
+    timing_results_forward = {
         'NLP solve': timings_solve_ocp_solver,
         'prepare \& factorize exact Hessian QP': timings_lin_and_factorize,
         'eval rhs': timings_lin_params,
         'solve': timings_solve_params,
         }
+
+    timing_results_adjoint = {
+        'NLP solve': timings_solve_ocp_solver,
+        'prepare \& factorize exact Hessian QP': timings_lin_and_factorize,
+        'eval rhs': timings_lin_params,
+        'solve': timings_solve_params_adj,
+    }
 
     u_opt = np.vstack(u_opt)
     sens_u = np.vstack(sens_u)
@@ -493,7 +515,7 @@ def main_parametric(qp_solver_ric_alg: int = 0, chain_params_: dict = get_chain_
     plt.xlabel(p_label)
     plt.xlim(p_var[0], p_var[-1])
 
-    plot_timings([timing_results], timing_results.keys(), ['acados'], figure_filename=None)
+    plot_timings([timing_results_forward, timing_results_adjoint], timing_results_forward.keys(), ['forward', 'adjoint'], figure_filename=None)
 
     plt.show()
 
