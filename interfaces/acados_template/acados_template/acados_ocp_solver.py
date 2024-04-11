@@ -806,7 +806,7 @@ class AcadosOcpSolver:
             return grad_p
 
         else:
-            raise NotImplementedError("")
+            raise NotImplementedError(f"with_respect_to {with_respect_to} not implemented.")
 
 
     def eval_solution_sensitivity(self, stages: Union[int, List[int]], with_respect_to: str) \
@@ -918,21 +918,7 @@ class AcadosOcpSolver:
         """
 
         print("WARNING: eval_param_sens() is deprecated. Please use eval_solution_sensitivity() instead!")
-
-        if not (self.acados_ocp.solver_options.qp_solver == 'FULL_CONDENSING_HPIPM' or
-                self.acados_ocp.solver_options.qp_solver == 'PARTIAL_CONDENSING_HPIPM'):
-            raise Exception("Parametric sensitivities are only available with HPIPM as QP solver.")
-
-        if not (
-           (self.acados_ocp.solver_options.hessian_approx == 'EXACT' or
-           (self.acados_ocp.cost.cost_type == 'LINEAR_LS' and
-            self.acados_ocp.cost.cost_type_0 == 'LINEAR_LS' and
-            self.acados_ocp.cost.cost_type_e == 'LINEAR_LS'))
-            and
-            self.acados_ocp.solver_options.regularize_method == 'NO_REGULARIZE' and
-            self.acados_ocp.solver_options.levenberg_marquardt == 0
-        ):
-            raise Exception("Parametric sensitivities are only correct if an exact Hessian is used!")
+        self.sanity_check_parametric_sensitivities()
 
         field_ = field
         field = field_.encode('utf-8')
