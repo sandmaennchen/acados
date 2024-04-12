@@ -428,6 +428,7 @@ def main_parametric(qp_solver_ric_alg: int = 0, chain_params_: dict = get_chain_
     timings_lin_and_factorize = np.zeros((np_test))
     timings_lin_params = np.zeros((np_test))
     timings_solve_params = np.zeros((np_test))
+    timings_lin_exact_hessian_qp = np.zeros((np_test))
     timings_solve_params_adj = np.zeros((np_test))
 
     for i in range(np_test):
@@ -445,9 +446,11 @@ def main_parametric(qp_solver_ric_alg: int = 0, chain_params_: dict = get_chain_
 
         ocp_solver.store_iterate(filename="iterate.json", overwrite=True, verbose=False)
         sensitivity_solver.load_iterate(filename="iterate.json", verbose=False)
+
         sensitivity_solver.solve_for_x0(x0, fail_on_nonzero_status=False, print_stats_on_failure=False)
 
-        timings_lin_and_factorize[i] = sensitivity_solver.get_stats("time_tot")
+        timings_lin_exact_hessian_qp[i] = sensitivity_solver.get_stats("time_lin")
+        timings_lin_and_factorize[i] = sensitivity_solver.get_stats("time_tot") - timings_lin_exact_hessian_qp[i]
         print(f"sensitivity_solver status {sensitivity_solver.status}")
 
         # Calculate the policy gradient
@@ -469,17 +472,19 @@ def main_parametric(qp_solver_ric_alg: int = 0, chain_params_: dict = get_chain_
         sens_u.append(sens_u_[:, p_idx])
 
     timing_results_forward = {
-        'NLP solve': timings_solve_ocp_solver,
-        'prepare \& factorize exact Hessian QP': timings_lin_and_factorize,
-        'eval rhs': timings_lin_params,
-        'solve': timings_solve_params,
+        'NLP solve': timings_solve_ocp_solver * 1000,
+        'prepare exact Hessian QP':  timings_lin_exact_hessian_qp[i],
+        'factorize exact Hessian QP': timings_lin_and_factorize * 1000,
+        'eval rhs': timings_lin_params * 1000,
+        'solve': timings_solve_params * 1000,
         }
 
     timing_results_adjoint = {
-        'NLP solve': timings_solve_ocp_solver,
-        'prepare \& factorize exact Hessian QP': timings_lin_and_factorize,
-        'eval rhs': timings_lin_params,
-        'solve': timings_solve_params_adj,
+        'NLP solve': timings_solve_ocp_solver * 1000,
+        'prepare exact Hessian QP':  timings_lin_exact_hessian_qp[i],
+        'factorize exact Hessian QP': timings_lin_and_factorize * 1000,
+        'eval rhs': timings_lin_params * 1000,
+        'solve': timings_solve_params_adj * 1000,
     }
 
     u_opt = np.vstack(u_opt)
