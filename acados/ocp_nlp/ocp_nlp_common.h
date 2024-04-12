@@ -478,7 +478,7 @@ void ocp_nlp_common_eval_lagr_grad_p(ocp_nlp_config *config, ocp_nlp_dims *dims,
 //
 void ocp_nlp_common_eval_solution_sens_adj_p(ocp_nlp_config *config, ocp_nlp_dims *dims,
                         ocp_nlp_opts *opts, ocp_nlp_memory *mem, ocp_nlp_workspace *work,
-                        ocp_nlp_out *sens_nlp_out, char *field, int stage, void *grad_p);
+                        ocp_nlp_out *sens_nlp_out, const char *field, int stage, void *grad_p);
 
 #ifdef __cplusplus
 } /* extern "C" */
