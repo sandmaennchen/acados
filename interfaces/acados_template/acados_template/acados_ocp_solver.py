@@ -786,7 +786,7 @@ class AcadosOcpSolver:
             seed_x = [seed_x]
             seed_u = [seed_u]
 
-        n_seeds = len(seed_x[0])
+        n_seeds = seed_x[0].shape[1]
 
         if sanity_checks:
             self.sanity_check_parametric_sensitivities()
@@ -803,12 +803,18 @@ class AcadosOcpSolver:
             for stage, (sx, su) in enumerate(zip(seed_x, seed_u)):
                 if not isinstance(sx, np.ndarray):
                     raise Exception(f"seed_x should be a np.ndarray, got {type(sx)}")
-                if sx.shape != (n_seeds, nx):
-                    raise Exception(f"seed_x at stage {stage} should have shape ({n_seeds}, {nx}), got {sx.shape}.")
+                if sx.shape != (nx, n_seeds):
+                    raise Exception(f"seed_x at stage {stage} should have shape (nx, n_seeds) = ({nx}, {n_seeds}), got {sx.shape}.")
                 if not isinstance(su, np.ndarray):
                     raise Exception(f"seed_u should be a np.ndarray, got {type(su)}")
-                if su.shape != (n_seeds, nu):
-                    raise Exception(f"seed_u at stage {stage} should have shape ({n_seeds}, {nu}), got {su.shape}.")
+                if su.shape != (nu, n_seeds):
+                    raise Exception(f"seed_u at stage {stage} should have shape (nu, n_seeds) = ({nu}, {n_seeds}), got {su.shape}.")
+
+            np0 = self.__acados_lib.ocp_nlp_dims_get_from_attr(self.nlp_config, self.nlp_dims, self.nlp_out, 0, "p".encode('utf-8'))
+            for stage in range(self.N+1):
+                nparam = self.__acados_lib.ocp_nlp_dims_get_from_attr(self.nlp_config, self.nlp_dims, self.nlp_out, stage, "p".encode('utf-8'))
+                if np0 != nparam:
+                    raise Exception(f"AcadosOcpSolver.eval_solution_sensitivity(): all stages need to have the same number of parameters, got np[0] = {np0} and np[{stage}] = {nparam}.")
 
         if with_respect_to == "params_global":
             nparam = self.__acados_lib.ocp_nlp_dims_get_from_attr(self.nlp_config, self.nlp_dims, self.nlp_out, 0, "p".encode('utf-8'))
@@ -826,8 +832,8 @@ class AcadosOcpSolver:
             for i_seed in range(n_seeds):
                 self.reset_sens_out()
                 for stage, x_seed, u_seed in zip(stages_, seed_x, seed_u):
-                    self.set(stage, 'sens_x', x_seed[i_seed, :])
-                    self.set(stage, 'sens_u', u_seed[i_seed, :])
+                    self.set(stage, 'sens_x', x_seed[:, i_seed])
+                    self.set(stage, 'sens_u', u_seed[:, i_seed])
 
                 c_grad_p = cast(grad_p[i_seed, :].ctypes.data, POINTER(c_double))
 
@@ -840,7 +846,9 @@ class AcadosOcpSolver:
             raise NotImplementedError(f"with_respect_to {with_respect_to} not implemented.")
 
 
-    def eval_solution_sensitivity(self, stages: Union[int, List[int]], with_respect_to: str) \
+    def eval_solution_sensitivity(self,
+                                  stages: Union[int, List[int]],
+                                  with_respect_to: str) \
                 -> Tuple[Union[List[np.ndarray], np.ndarray], Union[List[np.ndarray], np.ndarray]]:
         """
         Evaluate the sensitivity of the current solution x_i, u_i with respect to the initial state or the parameters for all stages i in `stages`.
