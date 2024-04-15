@@ -47,7 +47,7 @@ from .utils import print_casadi_expression, get_acados_path, get_python_interfac
     casadi_length, make_object_json_dumpable, J_to_idx, get_default_simulink_opts, \
     is_empty, get_simulink_default_opts
 
-from .builders import get_default_cmake_builder
+from .builders import ocp_get_default_cmake_builder
 
 from .plot_utils import latexify_plot
 

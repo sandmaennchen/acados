@@ -122,7 +122,7 @@ class CMakeBuilder:
 
 
 
-def get_default_cmake_builder() -> CMakeBuilder:
+def ocp_get_default_cmake_builder() -> CMakeBuilder:
     """
     If :py:class:`~acados_template.acados_ocp_solver.AcadosOcpSolver` is used with `CMake` this function returns a good first setting.
     :return: default :py:class:`~acados_template.builders.CMakeBuilder`
