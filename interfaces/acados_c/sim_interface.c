@@ -361,7 +361,7 @@ sim_solver *sim_solver_create(sim_config *config, void *dims, void *opts_)
 
 
 
-void sim_solver_destroy(void *solver)
+void sim_solver_destroy(sim_solver *solver)
 {
     free(solver);
 }

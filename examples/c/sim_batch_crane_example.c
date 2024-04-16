@@ -44,6 +44,7 @@
 
 #include "acados_c/external_function_interface.h"
 #include "acados_c/sim_interface.h"
+#include "acados_c/sim_batch_interface.h"
 
 // crane model
 #include "examples/c/crane_model/crane_model.h"
@@ -64,7 +65,9 @@ int main()
     * Initialize
     ************************************************/
 
-    int NREP = 500;
+    int NREP = 2;
+
+    int batch_size = 16;
 
     int ii, jj;
 
@@ -73,6 +76,10 @@ int main()
     int NF = nx + nu; // columns of forward seed
 
     double T = 0.05;
+
+    int ns = 4; // number of stages in rk integrator
+    int num_steps = 10; // number of integration steps
+    bool sens_adj = true;
 
     double *xref = calloc(nx, sizeof(double));
     xref[1] = M_PI;
@@ -90,12 +97,24 @@ int main()
 	for (ii = 0; ii < nx; ii++)
 		seed_adj[ii] = 1.0;
 
+
+    sim_batch_solver batch_solver;
+
+    batch_solver.N_batch = batch_size;
+    batch_solver.sim_solvers = malloc(batch_size * sizeof(batch_solver.sim_solvers));
+    batch_solver.status = malloc(batch_size * sizeof(batch_solver.status));
+
+    sim_in **in_batch;
+    sim_out **out_batch;
+
+    in_batch = malloc(batch_size * sizeof(in_batch));
+    out_batch = malloc(batch_size * sizeof(out_batch));
+
     /************************************************
     * external functions (explicit model)
     ************************************************/
 
     // forward explicit VDE
-
     external_function_casadi expl_vde_for;
     expl_vde_for.casadi_fun = &vdeFun;
     expl_vde_for.casadi_work = &vdeFun_work;
@@ -167,10 +186,9 @@ int main()
     impl_ode_jac_x_xdot_u.casadi_n_out = &casadi_impl_ode_jac_x_xdot_u_n_out;
     external_function_casadi_create(&impl_ode_jac_x_xdot_u);
 
-    int number_sim_solvers = 2;
-    int nss;
-    for (nss = 0; nss < number_sim_solvers; nss++)
+    for (int i = 0; i < batch_size; i++)
     {
+
         /************************************************
         * sim plan & config
         ************************************************/
@@ -178,24 +196,13 @@ int main()
         // choose plan
         sim_solver_plan_t plan;
 
-        switch (nss)
-        {
 
-            case 0:
-                printf("\nsim solver: ERK\n");
-                plan.sim_solver = ERK;
-                break;
+        // printf("\nsim solver: ERK\n");
+        // plan.sim_solver = ERK;
 
-            case 1:
-                printf("\nim solver: IRK\n");
-                plan.sim_solver = IRK;
-                break;
+        printf("\nsim solver: IRK\n");
+        plan.sim_solver = IRK;
 
-            default :
-                printf("\nnot enough sim solvers implemented!\n");
-                exit(1);
-
-        }
 
         // create correct config based on plan
         sim_config *config = sim_config_create(plan);
@@ -214,9 +221,6 @@ int main()
 
         sim_opts *opts = sim_opts_create(config, dims);
 
-        int ns = 4; // number of stages in rk integrator
-        int num_steps = 5; // number of integration steps
-        bool sens_adj = true;
         sim_opts_set(config, opts, "ns", &ns);
         sim_opts_set(config, opts, "num_steps", &num_steps);
         sim_opts_set(config, opts, "sens_adj", &sens_adj);
@@ -224,147 +228,139 @@ int main()
         /************************************************
         * sim in
         ************************************************/
+        in_batch[i] = sim_in_create(config, dims);
 
-        sim_in *in = sim_in_create(config, dims);
+        // matrices
+        sim_in_set(config, dims, in_batch[i], "T", &T);
+        sim_in_set(config, dims, in_batch[i], "x", xref);
+        sim_in_set(config, dims, in_batch[i], "u", uref);
+        sim_in_set(config, dims, in_batch[i], "Sx", Sx);
+        sim_in_set(config, dims, in_batch[i], "Su", Su);
+        sim_in_set(config, dims, in_batch[i], "seed_adj", seed_adj);
 
-		// matrices
-		sim_in_set(config, dims, in, "T", &T);
-		sim_in_set(config, dims, in, "x", xref);
-		sim_in_set(config, dims, in, "u", uref);
-		sim_in_set(config, dims, in, "Sx", Sx);
-		sim_in_set(config, dims, in, "Su", Su);
-		sim_in_set(config, dims, in, "seed_adj", seed_adj);
+        // sim_in_set(config, dims, in, "expl_vde_for", &expl_vde_for);
+        // sim_in_set(config, dims, in, "expl_vde_adj", &expl_vde_adj);
 
-        // external functions
-        switch (nss)
-        {
-            case 0:
-            {
-                sim_in_set(config, dims, in, "expl_vde_for", &expl_vde_for);
-                sim_in_set(config, dims, in, "expl_vde_adj", &expl_vde_adj);
-                break;
-            }
-            case 1:
-            {
-                sim_in_set(config, dims, in, "impl_ode_fun", &impl_ode_fun);
-                sim_in_set(config, dims, in, "impl_ode_fun_jac_x_xdot", &impl_ode_fun_jac_x_xdot);
-                sim_in_set(config, dims, in, "impl_ode_jac_x_xdot_u", &impl_ode_jac_x_xdot_u);
-                break;
-            }
-            default :
-            {
-                printf("\nnot enough sim solvers implemented!\n");
-                exit(1);
-            }
-        }
+        sim_in_set(config, dims, in_batch[i], "impl_ode_fun", &impl_ode_fun);
+        sim_in_set(config, dims, in_batch[i], "impl_ode_fun_jac_x_xdot", &impl_ode_fun_jac_x_xdot);
+        sim_in_set(config, dims, in_batch[i], "impl_ode_jac_x_xdot_u", &impl_ode_jac_x_xdot_u);
+
 
         /************************************************
         * sim out
         ************************************************/
 
-        sim_out *out = sim_out_create(config, dims);
+        out_batch[i] = sim_out_create(config, dims);
 
         /************************************************
         * sim solver
         ************************************************/
+        batch_solver.sim_solvers[i] = sim_solver_create(config, dims, opts);
+    }
 
-        sim_solver *sim_solver = sim_solver_create(config, dims, opts);
+    int acados_return;
 
-        int acados_return;
+    acados_timer timer;
+    acados_tic(&timer);
 
-        acados_timer timer;
-        acados_tic(&timer);
+    for (ii=0;ii<NREP;ii++)
+    {
+        acados_return = sim_batch_solve(&batch_solver, in_batch, out_batch);
+        if (acados_return != 0)
+            printf("error in sim solver in iteration %d\n", ii);
+    }
 
-        for (ii=0;ii<NREP;ii++)
-        {
-            acados_return = sim_solve(sim_solver, in, out);
-            if (acados_return != 0)
-                printf("error in sim solver\n");
-        }
-        double cpu_time = 1000*acados_toc(&timer)/NREP;
-        printf("time %f", cpu_time);
+    double cpu_time = acados_toc(&timer);
 
-        /************************************************
-        * printing
-        ************************************************/
+    printf("time %.2f ms\n", 1000.*cpu_time);
 
-        double *xn_out = calloc(nx, sizeof(double));
-		sim_out_get(config, dims, out, "xn", xn_out);
+    /************************************************
+    * printing
+    ************************************************/
+
+    double *xn_out = calloc(nx, sizeof(double));
+
+    for (int i = 0; i < batch_size; i++)
+    {
+        sim_out_get(batch_solver.sim_solvers[i]->config, batch_solver.sim_solvers[i]->dims, out_batch[i], "xn", xn_out);
         printf("\nxn: \n");
         d_print_exp_mat(1, nx, xn_out, 1);
-
-	    double *S_forw_out = calloc(nx*(nx+nu), sizeof(double));
-        if (opts->sens_forw){
-		    sim_out_get(config, dims, out, "S_forw", S_forw_out);
-            printf("\nS_forw_out: \n");
-            d_print_exp_mat(nx, NF, S_forw_out, nx);
-        }
-
-	    double *S_adj_out = calloc(nx+nu, sizeof(double));
-        if (opts->sens_adj){
-		    sim_out_get(config, dims, out, "S_adj", S_adj_out);
-            printf("\nS_adj_out: \n");
-            d_print_exp_mat(1, nx+nu, S_adj_out, 1);
-        }
-
-        double *S_hess_out = calloc((nu+nx)*(nu+nx), sizeof(double));
-        if (opts->sens_hess)
-        {
-		    sim_out_get(config, dims, out, "S_hess", S_hess_out);
-            printf("\nS_hess_out: \n");
-            for (ii=0;ii<NF;ii++){
-                for (jj=0;jj<NF;jj++){
-                    if (jj>ii){
-                        printf("%8.5f ", 0.0);
-                    }else{
-                        printf("%8.5f ", S_hess_out[jj*NF+ii]);
-                    }
-                }
-                printf("\n");
-            }
-        }
-
-        if(opts->sens_adj)
-        {
-            struct blasfeo_dmat sA;
-            blasfeo_allocate_dmat(nx, nx+nu, &sA);
-            blasfeo_pack_dmat(nx, nx+nu, S_forw_out, nx, &sA, 0, 0);
-
-            struct blasfeo_dvec sx;
-            blasfeo_allocate_dvec(nx, &sx);
-            blasfeo_pack_dvec(nx, in->S_adj, 1, &sx, 0);
-
-            struct blasfeo_dvec sz;
-            blasfeo_allocate_dvec(nx+nu, &sz);
-            // blasfeo_print_dmat(nx, nx+nu, &sA, 0, 0);
-            // blasfeo_print_tran_dvec(nx, &sx, 0);
-            blasfeo_dgemv_t(nx, nx+nu, 1.0, &sA, 0, 0, &sx, 0, 0.0, &sz, 0, &sz, 0);
-
-            printf("\nJac times lambdaX:\n");
-            blasfeo_print_exp_tran_dvec(nx+nu, &sz, 0);
-
-            blasfeo_free_dmat(&sA);
-            blasfeo_free_dvec(&sx);
-            blasfeo_free_dvec(&sz);
-        }
-
-        printf("\n");
-        printf("cpt: %8.4f [ms]\n", 1000*out->info->CPUtime);
-        printf("AD cpt: %8.4f [ms]\n", 1000*out->info->ADtime);
-        printf("========================\n");
-
-		free(xn_out);
-		free(S_forw_out);
-		free(S_adj_out);
-		free(S_hess_out);
-
-        sim_solver_destroy(sim_solver);
-        sim_in_destroy(in);
-        sim_out_destroy(out);
-        sim_opts_destroy(opts);
-        sim_dims_destroy(dims);
-        sim_config_destroy(config);
     }
+
+
+
+    // double *S_forw_out = calloc(nx*(nx+nu), sizeof(double));
+    // if (opts->sens_forw){
+    //     sim_out_get(config, dims, out, "S_forw", S_forw_out);
+    //     printf("\nS_forw_out: \n");
+    //     d_print_exp_mat(nx, NF, S_forw_out, nx);
+    // }
+
+    // double *S_adj_out = calloc(nx+nu, sizeof(double));
+    // if (opts->sens_adj){
+    //     sim_out_get(config, dims, out, "S_adj", S_adj_out);
+    //     printf("\nS_adj_out: \n");
+    //     d_print_exp_mat(1, nx+nu, S_adj_out, 1);
+    // }
+
+    // double *S_hess_out = calloc((nu+nx)*(nu+nx), sizeof(double));
+    // if (opts->sens_hess)
+    // {
+    //     sim_out_get(config, dims, out, "S_hess", S_hess_out);
+    //     printf("\nS_hess_out: \n");
+    //     for (ii=0;ii<NF;ii++){
+    //         for (jj=0;jj<NF;jj++){
+    //             if (jj>ii){
+    //                 printf("%8.5f ", 0.0);
+    //             }else{
+    //                 printf("%8.5f ", S_hess_out[jj*NF+ii]);
+    //             }
+    //         }
+    //         printf("\n");
+    //     }
+    // }
+
+    // if(opts->sens_adj)
+    // {
+    //     struct blasfeo_dmat sA;
+    //     blasfeo_allocate_dmat(nx, nx+nu, &sA);
+    //     blasfeo_pack_dmat(nx, nx+nu, S_forw_out, nx, &sA, 0, 0);
+
+    //     struct blasfeo_dvec sx;
+    //     blasfeo_allocate_dvec(nx, &sx);
+    //     blasfeo_pack_dvec(nx, in->S_adj, 1, &sx, 0);
+
+    //     struct blasfeo_dvec sz;
+    //     blasfeo_allocate_dvec(nx+nu, &sz);
+    //     // blasfeo_print_dmat(nx, nx+nu, &sA, 0, 0);
+    //     // blasfeo_print_tran_dvec(nx, &sx, 0);
+    //     blasfeo_dgemv_t(nx, nx+nu, 1.0, &sA, 0, 0, &sx, 0, 0.0, &sz, 0, &sz, 0);
+
+    //     printf("\nJac times lambdaX:\n");
+    //     blasfeo_print_exp_tran_dvec(nx+nu, &sz, 0);
+
+    //     blasfeo_free_dmat(&sA);
+    //     blasfeo_free_dvec(&sx);
+    //     blasfeo_free_dvec(&sz);
+    // }
+
+    // printf("\n");
+    // printf("cpt: %8.4f [ms]\n", 1000*out->info->CPUtime);
+    // printf("AD cpt: %8.4f [ms]\n", 1000*out->info->ADtime);
+    // printf("========================\n");
+
+    // free(xn_out);
+    // free(S_forw_out);
+    // free(S_adj_out);
+    // free(S_hess_out);
+
+    // sim_solver_destroy(batch_solver);
+    // sim_in_destroy(batch_in);
+    // sim_out_destroy(out);
+    // sim_opts_destroy(opts);
+    // sim_dims_destroy(dims);
+    // sim_config_destroy(config);
+
 
 	free(xref);
 	free(uref);
@@ -372,14 +368,14 @@ int main()
 	free(Su);
 	free(seed_adj);
 
-    // explicit model
-    external_function_casadi_free(&expl_vde_for);
-    external_function_casadi_free(&expl_vde_adj);
-    external_function_casadi_free(&expl_hess_ode);
-    // implicit model
-    external_function_casadi_free(&impl_ode_fun);
-    external_function_casadi_free(&impl_ode_fun_jac_x_xdot);
-    external_function_casadi_free(&impl_ode_jac_x_xdot_u);
+    // // explicit model
+    // external_function_casadi_free(&expl_vde_for);
+    // external_function_casadi_free(&expl_vde_adj);
+    // external_function_casadi_free(&expl_hess_ode);
+    // // implicit model
+    // external_function_casadi_free(&impl_ode_fun);
+    // external_function_casadi_free(&impl_ode_fun_jac_x_xdot);
+    // external_function_casadi_free(&impl_ode_jac_x_xdot_u);
 
     /************************************************
     * return

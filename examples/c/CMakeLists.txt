@@ -238,7 +238,7 @@ add_executable(simple_dae_example simple_dae_example.c
     simple_dae_model/simple_dae_impl_ode_fun_jac_x_xdot_z.c
     simple_dae_model/simple_dae_constr_h_fun_jac_ut_xt.c
     simple_dae_model/simple_dae_constr_h_fun_jac_ut_xt_hess.c)
-    
+
 target_link_libraries(simple_dae_example acados)
 add_test(simple_dae_example simple_dae_example)
 
@@ -266,6 +266,9 @@ add_test(mass_spring_nmpc_example mass_spring_example)
 add_executable(sim_crane_example sim_crane_example.c ${CRANE_MODEL_SRC})
 target_link_libraries(sim_crane_example acados)
 add_test(sim_crane_example sim_crane_example)
+
+add_executable(sim_batch_crane_example sim_batch_crane_example.c ${CRANE_MODEL_SRC})
+target_link_libraries(sim_batch_crane_example acados)
 
 # -------------------- sim_wt
 add_executable(sim_wt_model_nx3 sim_wt_model_nx3.c ${WT_MODEL_NX3_SRC})
