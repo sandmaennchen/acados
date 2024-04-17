@@ -55,13 +55,14 @@ sim.solver_options.num_stages = 7
 sim.solver_options.num_steps = 3
 sim.solver_options.newton_iter = 10 # for implicit integrator
 sim.solver_options.collocation_type = "GAUSS_RADAU_IIA"
-sim.solver_options.integrator_type = "GNSF" # ERK, IRK, GNSF
+sim.solver_options.integrator_type = "IRK" # ERK, IRK, GNSF
 sim.solver_options.sens_forw = True
 sim.solver_options.sens_adj = True
 sim.solver_options.sens_hess = False
 sim.solver_options.sens_algebraic = False
 sim.solver_options.output_z = False
 sim.solver_options.sim_method_jac_reuse = False
+sim.parameter_values = np.zeros(model.p.shape)
 
 
 # if sim.solver_options.integrator_type == "GNSF":
@@ -103,7 +104,7 @@ if sim.solver_options.integrator_type == "GNSF" and not DETECT_GNSF:
 
 # create
 cmake_builder = sim_get_default_cmake_builder()
-acados_integrator = AcadosSimSolver(sim, cmake_builder=cmake_builder)
+acados_integrator = AcadosSimSolver(sim)
 
 simX = np.zeros((N+1, nx))
 x0 = np.array([0.0, np.pi+1, 0.0, 0.0])

@@ -62,8 +62,10 @@ def export_pendulum_ode_model() -> AcadosModel:
     xdot = vertcat(x1_dot, theta_dot, v1_dot, dtheta_dot)
 
     # parameters
-    p = []
-
+    p = ca.SX.zeros(1000, 1)
+    p[0] = SX.sym('p')
+    p = ca.sparsify(p)
+    breakpoint()
     # dynamics
     cos_theta = cos(theta)
     sin_theta = sin(theta)
