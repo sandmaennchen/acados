@@ -62,7 +62,8 @@ sim.solver_options.sens_hess = False
 sim.solver_options.sens_algebraic = False
 sim.solver_options.output_z = False
 sim.solver_options.sim_method_jac_reuse = False
-sim.parameter_values = np.zeros(model.p.shape)
+sim.parameter_values = np.zeros(model.p.shape).flatten()
+sim.parameter_values[-1] = 1.0
 
 
 # if sim.solver_options.integrator_type == "GNSF":
