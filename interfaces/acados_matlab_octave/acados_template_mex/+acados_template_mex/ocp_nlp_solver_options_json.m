@@ -50,15 +50,18 @@ classdef ocp_nlp_solver_options_json < handle
         nlp_solver_tol_comp
         nlp_solver_step_length
         nlp_solver_warm_start_first_qp
+        nlp_solver_ext_qp_res
         rti_phase
         qp_solver_cond_N
         qp_solver_iter_max
         qp_solver_tol_stat
-        reg_epsilon
         qp_solver_tol_eq
         qp_solver_tol_ineq
         qp_solver_tol_comp
         qp_solver_warm_start
+        qp_solver_ric_alg
+        qp_solver_cond_ric_alg
+        reg_epsilon
         print_level
         levenberg_marquardt
         regularize_method
@@ -79,9 +82,6 @@ classdef ocp_nlp_solver_options_json < handle
         full_step_dual
         eps_sufficient_descent
         hpipm_mode
-        qp_solver_ric_alg
-        qp_solver_cond_ric_alg
-        nlp_solver_ext_qp_res
         ext_fun_compile_flags
         cost_discretization
         with_solution_sens_wrt_params
