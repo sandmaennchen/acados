@@ -29,7 +29,7 @@
 
 %
 
-classdef acados_ocp_nlp_json < handle
+classdef AcadosOcp < handle
     properties
         dims
         cost
@@ -48,7 +48,7 @@ classdef acados_ocp_nlp_json < handle
         name
     end
     methods
-        function obj = acados_ocp_nlp_json(simulink_opts)
+        function obj = AcadosOcp(simulink_opts)
             obj.dims = acados_template_mex.AcadosOcpDims();
             obj.cost = acados_template_mex.AcadosOcpCost();
             obj.constraints = acados_template_mex.AcadosOcpConstraints();
