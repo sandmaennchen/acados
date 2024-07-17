@@ -54,91 +54,123 @@ classdef AcadosOcpOptions < handle
         time_steps
         Tsim
         qp_solver              %  qp solver to be used in the NLP solver
-        qp_solver_cond_N
-        qp_solver_iter_max
         qp_solver_tol_stat
         qp_solver_tol_eq
         qp_solver_tol_ineq
         qp_solver_tol_comp
+        qp_solver_iter_max
+        qp_solver_cond_N
+        qp_solver_cond_block_size
         qp_solver_warm_start
-        qp_solver_ric_alg
         qp_solver_cond_ric_alg
-        reg_epsilon
+        qp_solver_ric_alg
+        rti_log_residuals
         print_level
+        cost_discretization
         regularize_method
+        reg_epsilon
         exact_hess_cost
-        exact_hess_constr
         exact_hess_dyn
+        exact_hess_constr
         fixed_hess
         ext_cost_num_hess
         alpha_min
         alpha_reduction
-        as_rti_iter
-        as_rti_level
-        rti_log_residuals
         line_search_use_sufficient_descent
         globalization_use_SOC
         full_step_dual
         eps_sufficient_descent
         hpipm_mode
-        ext_fun_compile_flags
-        cost_discretization
         with_solution_sens_wrt_params
         with_value_sens_wrt_params
-        num_threads_in_batch_solve
+        as_rti_iter
+        as_rti_level
+        with_adaptive_levenberg_marquardt
+        adaptive_levenberg_marquardt_lam
+        adaptive_levenberg_marquardt_mu_min
+        adaptive_levenberg_marquardt_mu0
         log_primal_step_norm
+
+        ext_fun_compile_flags
+        model_external_shared_lib_dir
+        model_external_shared_lib_name
+        custom_update_filename
+        custom_update_header_filename
+        custom_templates
+        custom_update_copy
+        num_threads_in_batch_solve
 
     end
     methods
         function obj = AcadosOcpOptions()
-            obj.qp_solver = 'PARTIAL_CONDENSING_HPIPM';
             obj.hessian_approx = 'GAUSS_NEWTON';
             obj.integrator_type = 'ERK';
-            obj.collocation_type = 'GAUSS_LEGENDRE';
             obj.tf = [];
-            obj.Tsim = [];
             obj.nlp_solver_type = 'SQP_RTI';
+            obj.nlp_solver_step_length = 1.0;
+            obj.nlp_solver_tol_stat = 1e-6;
+            obj.nlp_solver_tol_eq = 1e-6;
+            obj.nlp_solver_tol_ineq = 1e-6;
+            obj.nlp_solver_tol_comp = 1e-6;
+            obj.nlp_solver_max_iter = 50;
+            obj.nlp_solver_ext_qp_res = 0;
+            obj.nlp_solver_warm_start_first_qp = false;
+            obj.globalization = 'FIXED_STEP';
+            obj.levenberg_marquardt = 0.0;
+            obj.collocation_type = 'GAUSS_LEGENDRE';
+            obj.sim_method_num_stages = 4;
             obj.sim_method_num_steps = 1;
-            obj.sim_method_num_stages = 2;
             obj.sim_method_newton_iter = 3;
             obj.sim_method_newton_tol = 0.0;
             obj.sim_method_jac_reuse = 0;
-            obj.nlp_solver_max_iter = 50;
-            obj.qp_solver_cond_N = [];
-            obj.nlp_solver_step_length = 1.0;
-            obj.qp_solver_iter_max = [];
-            obj.reg_epsilon = 1e-4;
-            obj.print_level = 0;
             obj.time_steps = [];
-            obj.levenberg_marquardt = 0.0;
+            obj.Tsim = [];
+            obj.qp_solver = 'PARTIAL_CONDENSING_HPIPM';
+            obj.qp_solver_tol_stat = [];
+            obj.qp_solver_tol_eq = [];
+            obj.qp_solver_tol_ineq = [];
+            obj.qp_solver_tol_comp = [];
+            obj.qp_solver_iter_max = 50;
+            obj.qp_solver_cond_N = [];
+            obj.qp_solver_cond_block_size = [];
+            obj.qp_solver_cond_ric_alg = 0;
+            obj.qp_solver_ric_alg = 0;
+            obj.rti_log_residuals = 0;
+            obj.print_level = 0;
+            obj.cost_discretization = 'EULER';
             obj.regularize_method = 'NO_REGULARIZE';
+            obj.reg_epsilon = 1e-4;
             obj.exact_hess_cost = 1;
-            obj.exact_hess_constr = 1;
             obj.exact_hess_dyn = 1;
+            obj.exact_hess_constr = 1;
             obj.fixed_hess = 0;
             obj.ext_cost_num_hess = 0;
             obj.alpha_min = 0.05;
             obj.alpha_reduction = 0.7;
-            obj.globalization = 'FIXED_STEP';
             obj.line_search_use_sufficient_descent = 0;
             obj.globalization_use_SOC = 0;
             obj.full_step_dual = 0;
-            obj.qp_solver_cond_ric_alg = 0;
-            obj.qp_solver_ric_alg = 0;
             obj.eps_sufficient_descent = 1e-4;
             obj.hpipm_mode = 'BALANCE';
-            obj.nlp_solver_ext_qp_res = 0;
-            obj.ext_fun_compile_flags = '-O2';
-            obj.cost_discretization = 'EULER';
             obj.with_solution_sens_wrt_params = 0;
             obj.with_value_sens_wrt_params = 0;
             obj.as_rti_iter = 1;
             obj.as_rti_level = 4;
-            obj.rti_log_residuals = 0;
-            obj.num_threads_in_batch_solve = 1;
+            obj.with_adaptive_levenberg_marquardt = false;
+            obj.adaptive_levenberg_marquardt_lam = 5.0;
+            obj.adaptive_levenberg_marquardt_mu_min = 1e-16;
+            obj.adaptive_levenberg_marquardt_mu0 = 1e-3;
             obj.log_primal_step_norm = 0;
-
+            obj.ext_fun_compile_flags = '-O2';
+            obj.model_external_shared_lib_dir = [];
+            obj.model_external_shared_lib_name = [];
+            obj.custom_update_filename = '';
+            obj.custom_update_header_filename = '';
+            obj.custom_templates = [];
+            obj.custom_update_copy = true;
+            obj.num_threads_in_batch_solve = 1;
         end
+
         function s = struct(self)
             if exist('properties')
                 publicProperties = eval('properties(self)');
