@@ -29,7 +29,7 @@
 
 %
 
-function render_acados_templates(AcadosOcp_file)
+function render_acados_templates(acados_ocp_nlp_json_file)
 
     acados_root_dir = getenv('ACADOS_INSTALL_DIR');
     acados_template_folder = fullfile(acados_root_dir,...
@@ -48,9 +48,9 @@ function render_acados_templates(AcadosOcp_file)
 
     %% load json data
     % if is_octave()
-    acados_ocp = loadjson(fileread(AcadosOcp_file));
+    acados_ocp = loadjson(fileread(acados_ocp_nlp_json_file));
     % else % Matlab
-    %     acados_ocp = jsondecode(fileread(AcadosOcp_file));
+    %     acados_ocp = jsondecode(fileread(acados_ocp_nlp_json_file));
     % end
     % get model name from json file
     model_name = acados_ocp.model.name;
@@ -58,7 +58,7 @@ function render_acados_templates(AcadosOcp_file)
     %% render templates
     template_dir = fullfile(acados_template_folder, 'c_templates_tera','*');
     matlab_template_dir = fullfile(acados_template_folder, 'c_templates_tera','matlab_templates', '*');
-    json_fullfile = fullfile(pwd, AcadosOcp_file);
+    json_fullfile = fullfile(pwd, acados_ocp_nlp_json_file);
     main_dir = pwd;
     chdir('c_generated_code');
 
