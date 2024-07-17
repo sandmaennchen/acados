@@ -968,7 +968,7 @@ class AcadosOcp:
                 generate_c_code_conl_cost(model, stage_type, code_gen_opts)
             elif getattr(self.cost, attr) == 'EXTERNAL':
                 generate_c_code_external_cost(model, stage_type, code_gen_opts)
-
+            # TODO: generic
 
     def remove_x0_elimination(self) -> None:
         self.constraints.idxbxe_0 = np.zeros((0,))
