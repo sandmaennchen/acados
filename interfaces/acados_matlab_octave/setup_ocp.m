@@ -29,7 +29,7 @@
 
 %
 
-function ocp_json = set_up_acados_ocp_nlp_json(obj, simulink_opts)
+function ocp_json = setup_ocp(obj, simulink_opts)
 
     model = obj.model_struct;
     % create
