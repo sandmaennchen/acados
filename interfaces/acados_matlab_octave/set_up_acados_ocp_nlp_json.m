@@ -542,7 +542,7 @@ function ocp_json = set_up_acados_ocp_nlp_json(obj, simulink_opts)
     elseif strcmp(obj.opts_struct.sim_method, 'discrete')
         ocp_json.model.dyn_ext_fun_type = model.dyn_ext_fun_type;
         if strcmp(model.dyn_ext_fun_type, 'casadi')
-            ocp_json.model.f_phi_expr = model.dyn_expr_phi;
+            ocp_json.model.disc_dyn_expr = model.dyn_expr_phi;
         elseif strcmp(model.dyn_ext_fun_type, 'generic')
             ocp_json.model.dyn_generic_source = model.dyn_generic_source;
             if isfield(model, 'dyn_disc_fun_jac_hess')
