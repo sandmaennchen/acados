@@ -27,31 +27,33 @@
 % ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 % POSSIBILITY OF SUCH DAMAGE.;
 
-%
 
-classdef ocp_nlp_solver_options_json < handle
+
+classdef AcadosOcpOptions < handle
     properties
-        qp_solver              %  qp solver to be used in the NLP solver
         hessian_approx         %  hessian approximation
         integrator_type        %  integrator type
         tf                     %  prediction horizon
-        Tsim
-        time_steps
         nlp_solver_type        %  NLP solver
+        nlp_solver_step_length
+        nlp_solver_tol_stat
+        nlp_solver_tol_eq
+        nlp_solver_tol_ineq
+        nlp_solver_tol_comp
+        nlp_solver_max_iter
+        nlp_solver_ext_qp_res
+        nlp_solver_warm_start_first_qp
+        globalization
+        levenberg_marquardt
+        collocation_type
         sim_method_num_steps   %  number of steps in integrator
         sim_method_num_stages  %  size of butcher tableau
         sim_method_newton_iter
         sim_method_newton_tol
         sim_method_jac_reuse
-        nlp_solver_max_iter
-        nlp_solver_tol_stat
-        nlp_solver_tol_eq
-        nlp_solver_tol_ineq
-        nlp_solver_tol_comp
-        nlp_solver_step_length
-        nlp_solver_warm_start_first_qp
-        nlp_solver_ext_qp_res
-        rti_phase
+        time_steps
+        Tsim
+        qp_solver              %  qp solver to be used in the NLP solver
         qp_solver_cond_N
         qp_solver_iter_max
         qp_solver_tol_stat
@@ -63,7 +65,6 @@ classdef ocp_nlp_solver_options_json < handle
         qp_solver_cond_ric_alg
         reg_epsilon
         print_level
-        levenberg_marquardt
         regularize_method
         exact_hess_cost
         exact_hess_constr
@@ -75,8 +76,6 @@ classdef ocp_nlp_solver_options_json < handle
         as_rti_iter
         as_rti_level
         rti_log_residuals
-        globalization
-        collocation_type
         line_search_use_sufficient_descent
         globalization_use_SOC
         full_step_dual
@@ -91,9 +90,9 @@ classdef ocp_nlp_solver_options_json < handle
 
     end
     methods
-        function obj = ocp_nlp_solver_options_json()
-            obj.qp_solver       = 'PARTIAL_CONDENSING_HPIPM';
-            obj.hessian_approx  = 'GAUSS_NEWTON';
+        function obj = AcadosOcpOptions()
+            obj.qp_solver = 'PARTIAL_CONDENSING_HPIPM';
+            obj.hessian_approx = 'GAUSS_NEWTON';
             obj.integrator_type = 'ERK';
             obj.collocation_type = 'GAUSS_LEGENDRE';
             obj.tf = [];
@@ -107,7 +106,6 @@ classdef ocp_nlp_solver_options_json < handle
             obj.nlp_solver_max_iter = 50;
             obj.qp_solver_cond_N = [];
             obj.nlp_solver_step_length = 1.0;
-            obj.rti_phase = 0;
             obj.qp_solver_iter_max = [];
             obj.reg_epsilon = 1e-4;
             obj.print_level = 0;

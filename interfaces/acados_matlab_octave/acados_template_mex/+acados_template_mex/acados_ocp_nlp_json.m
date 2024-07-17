@@ -51,8 +51,8 @@ classdef acados_ocp_nlp_json < handle
         function obj = acados_ocp_nlp_json(simulink_opts)
             obj.dims = acados_template_mex.AcadosOcpDims();
             obj.cost = acados_template_mex.AcadosOcpCost();
-            obj.constraints = acados_template_mex.ocp_nlp_constraints_json();
-            obj.solver_options = acados_template_mex.ocp_nlp_solver_options_json();
+            obj.constraints = acados_template_mex.AcadosOcpConstraints();
+            obj.solver_options = acados_template_mex.AcadosOcpOptions();
             obj.model = acados_template_mex.AcadosModel();
             obj.acados_include_path = [];
             obj.acados_lib_path = [];
