@@ -117,7 +117,7 @@ function sim_generate_c_code(obj)
         % savejson does not work for classes!
         % -> consider making the sim properties structs directly.
         sim_json_struct = obj.sim.struct();
-        sim_json_struct.dims = obj.sim.dims;
+        sim_json_struct.dims = obj.sim.dims.struct();
         sim_json_struct.solver_options = obj.sim.sim_options;
 
         % add compilation information to json
