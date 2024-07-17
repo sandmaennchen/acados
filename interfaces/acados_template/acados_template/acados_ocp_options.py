@@ -1013,14 +1013,14 @@ class AcadosOcpOptions:
 
     @nlp_solver_step_length.setter
     def nlp_solver_step_length(self, nlp_solver_step_length):
-        if isinstance(nlp_solver_step_length, bool):
+        if isinstance(nlp_solver_step_length, float) and nlp_solver_step_length >= 0.:
             self.__nlp_solver_step_length = nlp_solver_step_length
         else:
             raise Exception('Invalid nlp_solver_step_length value. nlp_solver_step_length must be a positive float.')
 
     @nlp_solver_warm_start_first_qp.setter
     def nlp_solver_warm_start_first_qp(self, nlp_solver_warm_start_first_qp):
-        if isinstance(nlp_solver_warm_start_first_qp, int) and nlp_solver_warm_start_first_qp >= 0:
+        if isinstance(nlp_solver_warm_start_first_qp, bool):
             self.__nlp_solver_warm_start_first_qp = nlp_solver_warm_start_first_qp
         else:
             raise Exception('Invalid nlp_solver_warm_start_first_qp value. Expected bool.')

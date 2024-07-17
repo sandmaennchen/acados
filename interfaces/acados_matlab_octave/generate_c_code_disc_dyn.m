@@ -116,8 +116,12 @@ end
 if strcmp(model.dyn_ext_fun_type, 'casadi')
     if isfield(model, 'dyn_expr_phi')
         phi = model.dyn_expr_phi;
-    else
+    elseif isfield(model, 'f_phi_expr')
         phi = model.f_phi_expr;
+    elseif isa(model, 'acados_template_mex.AcadosModel')
+        phi = model.disc_dyn_expr
+    else
+        error('no discrete dynamics expression provided')
     end
 
     % assume nx1 = nx !!!
