@@ -211,7 +211,8 @@ def main():
     ocp.solver_options.print_level = 2
 
     # create ocp solver
-    ocp_solver = AcadosOcpSolver(ocp)
+    cmake_builder = ocp_get_default_cmake_builder() if use_cmake else None
+    ocp_solver = AcadosOcpSolver(ocp, cmake_builder=cmake_builder)
 
     # initial state
     ocp_solver.set(0, 'lbx', x0)
