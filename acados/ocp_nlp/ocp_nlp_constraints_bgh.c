@@ -1648,7 +1648,7 @@ void ocp_nlp_constraints_bgh_update_qp_vectors(void *config_, void *dims_, void 
 }
 
 
-void ocp_nlp_constraints_bgh_config_initialize_default(void *config_)
+void ocp_nlp_constraints_bgh_config_initialize_default(void *config_, int stage)
 {
     ocp_nlp_constraints_config *config = config_;
 
@@ -1684,6 +1684,7 @@ void ocp_nlp_constraints_bgh_config_initialize_default(void *config_)
     config->update_qp_vectors = &ocp_nlp_constraints_bgh_update_qp_vectors;
     config->compute_fun = &ocp_nlp_constraints_bgh_compute_fun;
     config->config_initialize_default = &ocp_nlp_constraints_bgh_config_initialize_default;
+    config->stage = stage;
 
     return;
 }
