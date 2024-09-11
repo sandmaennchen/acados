@@ -110,10 +110,7 @@ class AcadosOcpSolver:
             acados_ocp.remove_x0_elimination()
 
         # generate code (external functions and templated code)
-        context = acados_ocp.generate_external_functions()
-        context.finalize()
-        acados_ocp.casadi_pool_names = context.pool_names
-
+        acados_ocp.generate_external_functions()
         acados_ocp.dump_to_json()
         acados_ocp.render_templates(cmake_builder=cmake_builder)
 
