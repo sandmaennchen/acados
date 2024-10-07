@@ -1603,6 +1603,12 @@ void ocp_nlp_sqp_rti_terminate(void *config_, void *mem_, void *work_)
 }
 
 
+bool ocp_nlp_sqp_rti_is_real_time_algorithm()
+{
+    return true;
+}
+
+
 void ocp_nlp_sqp_rti_config_initialize_default(void *config_)
 {
     ocp_nlp_config *config = (ocp_nlp_config *) config_;
@@ -1626,6 +1632,7 @@ void ocp_nlp_sqp_rti_config_initialize_default(void *config_)
     config->opts_get = &ocp_nlp_sqp_rti_opts_get;
     config->work_get = &ocp_nlp_sqp_rti_work_get;
     config->terminate = &ocp_nlp_sqp_rti_terminate;
+    config->is_real_time_algorithm = &ocp_nlp_sqp_rti_is_real_time_algorithm;
 
     return;
 }

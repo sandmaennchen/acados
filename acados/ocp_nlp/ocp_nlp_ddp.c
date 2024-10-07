@@ -1425,6 +1425,11 @@ void ocp_nlp_ddp_terminate(void *config_, void *mem_, void *work_)
     config->qp_solver->terminate(config->qp_solver, mem->nlp_mem->qp_solver_mem, work->nlp_work->qp_work);
 }
 
+bool ocp_nlp_ddp_is_real_time_algorithm()
+{
+    return false;
+}
+
 
 void ocp_nlp_ddp_config_initialize_default(void *config_)
 {
@@ -1449,6 +1454,7 @@ void ocp_nlp_ddp_config_initialize_default(void *config_)
     config->opts_get = &ocp_nlp_ddp_opts_get;
     config->work_get = &ocp_nlp_ddp_work_get;
     config->terminate = &ocp_nlp_ddp_terminate;
+    config->is_real_time_algorithm = &ocp_nlp_ddp_is_real_time_algorithm;
 
     return;
 }

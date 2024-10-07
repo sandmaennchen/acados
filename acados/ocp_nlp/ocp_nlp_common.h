@@ -101,6 +101,8 @@ typedef struct ocp_nlp_config
     void (*work_get)(void *config_, void *dims, void *work_, const char *field, void *return_value_);
     //
     void (*terminate)(void *config, void *mem, void *work);
+    bool (*is_real_time_algorithm)();
+
     // config structs of submodules
     ocp_qp_xcond_solver_config *qp_solver; // TODO rename xcond_solver
     ocp_nlp_dynamics_config **dynamics;
