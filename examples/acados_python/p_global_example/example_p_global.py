@@ -276,8 +276,8 @@ def main_mocp(lut=True, use_p_global=True, with_matlab_templates=False, blazing=
     n_phases = 2
     mocp = AcadosMultiphaseOcp(N_list=[10, 10])
 
-    ocp_phase_1 = create_ocp_formulation_without_opts(p_global, m, l, C, lut=lut, use_p_global=use_p_global)
-    ocp_phase_2 = create_ocp_formulation_without_opts(p_global, m, l, C, lut=lut, use_p_global=use_p_global)
+    ocp_phase_1 = create_ocp_formulation_without_opts(p_global, m, l, C, lut=lut, use_p_global=use_p_global, blazing=blazing)
+    ocp_phase_2 = create_ocp_formulation_without_opts(p_global, m, l, C, lut=lut, use_p_global=use_p_global, blazing=blazing)
 
     mocp.set_phase(ocp_phase_1, 0)
     mocp.set_phase(ocp_phase_2, 1)
@@ -395,4 +395,6 @@ if __name__ == "__main__":
         np.testing.assert_almost_equal(ref_lut, ref_nolut)
 
     # to test transfer to MATLAB/Octave
-    res_lut, t_lin_lut = main(use_cython=False, use_p_global=True, lut=True, with_matlab_templates=with_matlab_templates, code_export_directory='c_generated_code_single_phase')
+    res_mocp_lut_p_global, _, mocp_json_file = main_mocp(use_p_global=True, lut=True, blazing=True, with_matlab_templates=with_matlab_templates, code_export_directory='c_generated_code_multi_phase')
+
+    res_lut, t_lin_lut = main(use_cython=False, use_p_global=True, lut=True, blazing=True, with_matlab_templates=with_matlab_templates, code_export_directory='c_generated_code_single_phase')

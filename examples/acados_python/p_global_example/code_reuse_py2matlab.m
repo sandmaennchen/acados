@@ -31,7 +31,7 @@ import casadi.*
 
 check_acados_requirements()
 
-json_files = {'c_generated_code_single_phase/blz_False_pglobal_True.json', 'c_generated_code_multi_phase/mocp_blz_False_pglobal_True_0.json'};
+json_files = {'c_generated_code_single_phase/blz_True_pglobal_True.json', 'c_generated_code_multi_phase/mocp_blz_True_pglobal_True_0.json'};
 
 for i = 1:length(json_files)
     json_file = json_files{i};
