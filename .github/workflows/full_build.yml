@@ -524,7 +524,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install liboctave-dev -y --fix-missing
         octave --version
-        ${{ github.workspace }}/.github/linux/install_new_casadi_octave.sh
+        ${{ github.workspace }}/.github/linux/install_casadi_octave.sh
 
     # just needed for blasfeo_target.h in MEX interface
     - name: Configure CMake
@@ -622,7 +622,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install liboctave-dev -y --fix-missing
         octave --version
-        ${{ github.workspace }}/.github/linux/install_new_casadi_octave.sh
+        ${{ github.workspace }}/.github/linux/install_casadi_octave.sh
 
     # just needed for blasfeo_target.h in MEX interface
     - name: Configure CMake
@@ -725,7 +725,7 @@ jobs:
       working-directory: ${{ github.workspace }}/external
       shell: bash
       run: |
-        ${{ github.workspace }}/.github/linux/install_new_casadi_matlab.sh
+        ${{ github.workspace }}/.github/linux/install_casadi_matlab.sh
 
     - name: Export Paths
       working-directory: ${{ github.workspace }}
@@ -782,7 +782,7 @@ jobs:
       working-directory: ${{ github.workspace }}/external
       shell: bash
       run: |
-        ${{ github.workspace }}/.github/linux/install_new_casadi_matlab.sh
+        ${{ github.workspace }}/.github/linux/install_casadi_matlab.sh
 
     - name: Install simde
       working-directory: ${{ github.workspace }}
@@ -997,7 +997,7 @@ jobs:
         sudo apt-get update
         sudo apt-get install liboctave-dev -y --fix-missing
         octave --version
-        ${{ github.workspace }}/.github/linux/install_new_casadi_octave.sh
+        ${{ github.workspace }}/.github/linux/install_casadi_octave.sh
 
     - name: Install Tera
       working-directory: ${{ github.workspace }}
