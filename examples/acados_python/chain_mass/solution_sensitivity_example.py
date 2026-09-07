@@ -38,7 +38,7 @@ from casadi import SX, norm_2, vertcat
 import matplotlib.pyplot as plt
 from acados_template import AcadosModel, AcadosOcp, AcadosOcpSolver
 from utils import get_chain_params
-from typing import Tuple, Optional, Union
+from typing import Tuple, Optional
 from plot_utils import plot_timings
 import time
 from param_utils import ParamLayout, ParamVector

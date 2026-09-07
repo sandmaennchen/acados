@@ -26,8 +26,6 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.;
 
-# import sys
-# sys.path.insert(0, '../common')
 
 import numpy as np
 from acados_template import AcadosOcpSolver, AcadosCasadiOcpSolver

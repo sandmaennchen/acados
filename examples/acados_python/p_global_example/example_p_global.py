@@ -73,7 +73,7 @@ def create_p_global(lut=True):
 
 
 def export_pendulum_ode_model(p_global, m, l, C, lut=True, blazing=True) -> AcadosModel:
-    model_name = f'pendulum_blazing_{blazing}'
+    model_name = f'blz_{blazing}'
 
     # constants
     m_cart = 1. # mass of the cart [kg]
@@ -147,7 +147,7 @@ def create_ocp_formulation_without_opts(p_global, m, l, C, lut=True, use_p_globa
     # set model
     model = export_pendulum_ode_model(p_global, m, l, C, lut=lut, blazing=blazing)
     model.p_global = p_global
-    model.name += f'_p_global_{use_p_global}'
+    model.name += f'_pglobal_{use_p_global}'
     ocp.model = model
 
     # dimensions
@@ -265,7 +265,7 @@ def main(use_cython=False, lut=True, use_p_global=True, blazing=True, with_matla
     return residuals, timing
 
 
-def main_mocp(lut=True, use_p_global=True, with_matlab_templates=False, initialize_p_global_with_zeros=False, code_export_directory=None):
+def main_mocp(lut=True, use_p_global=True, with_matlab_templates=False, blazing=True, initialize_p_global_with_zeros=False, code_export_directory=None):
     print(f"\n\nRunning multi-phase example with lut={lut}, use_p_global={use_p_global}")
     p_global, m, l, C, p_global_values = create_p_global(lut=lut)
 
@@ -384,7 +384,7 @@ if __name__ == "__main__":
 
     with_matlab_templates = True
     res_mocp_lut_p, _, mocp_json_file = main_mocp(use_p_global=False, lut=True)
-    res_mocp_lut_p_global, _, mocp_json_file = main_mocp(use_p_global=True, lut=True, with_matlab_templates=with_matlab_templates, code_export_directory='c_generated_code_multi_phase')
+    res_mocp_lut_p_global, _, mocp_json_file = main_mocp(use_p_global=True, lut=True, with_matlab_templates=with_matlab_templates)
     res_mocp_load, _ = main_mocp_json_load(mocp_json_file)
 
     np.testing.assert_almost_equal(res_mocp_load, res_mocp_lut_p_global)
