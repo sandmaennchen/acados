@@ -543,6 +543,8 @@ void ocp_nlp_reg_convexify_regularize(void *config, ocp_nlp_reg_dims *dims, void
     blasfeo_dgecp(nx[N], nx[N], &mem->Q_tilde, 0, 0, mem->RSQrq[N], nu[N], nu[N]);
     // Q_bar -= Q_tilde
     blasfeo_dgead(nx[N], nx[N], -1.0, &mem->Q_tilde, 0, 0, &mem->Q_bar, 0, 0);
+    // make Q_bar symmetric
+    blasfeo_dtrtr_l(nx[N], &mem->Q_bar, 0, 0, &mem->Q_bar, 0, 0);
 
     for (ii = N-1; ii >= 0; --ii)
     {
@@ -614,6 +616,9 @@ void ocp_nlp_reg_convexify_regularize(void *config, ocp_nlp_reg_dims *dims, void
         // printf("H_tilde\n");
         // blasfeo_print_dmat(nu+nx, nu+nx, &work->qp_in->RSQrq[i], 0, 0);
 
+        // make symmetric
+//        blasfeo_dtrtr_l(nx[ii], &mem->Q_bar, 0, 0, &mem->Q_bar, 0, 0);
+
         // TODO take from b !!!!!!
 //        for (jj = 0; jj < nx[ii+1]; jj++)
 //            BLASFEO_DVECEL(&mem->b2, jj) = BLASFEO_DMATEL(mem->BAbt[ii], nu[ii]+nx[ii], jj);
@@ -627,6 +632,10 @@ void ocp_nlp_reg_convexify_regularize(void *config, ocp_nlp_reg_dims *dims, void
 //            BLASFEO_DMATEL(mem->RSQrq[ii], nu[ii]+nx[ii], jj) = BLASFEO_DMATEL(mem->RSQrq[ii], nu[ii]+nx[ii], jj) + BLASFEO_DVECEL(&mem->b2, jj);
 
         blasfeo_dgead(nx[ii], nx[ii], -1.0, mem->RSQrq[ii], nu[ii], nu[ii], &mem->Q_bar, 0, 0);
+
+        // make symmetric
+        blasfeo_dtrtr_l(nx[ii], &mem->Q_bar, 0, 0, &mem->Q_bar, 0, 0);
+
     }
 
     return;
@@ -660,6 +669,7 @@ void ocp_nlp_reg_convexify_regularize_lhs(void *config, ocp_nlp_reg_dims *dims, 
     blasfeo_dgecp(nx[N], nx[N], mem->RSQrq[N], nu[N], nu[N], &mem->Q_bar, 0, 0);
     blasfeo_dgecp(nx[N], nx[N], &mem->Q_tilde, 0, 0, mem->RSQrq[N], nu[N], nu[N]);
     blasfeo_dgead(nx[N], nx[N], -1.0, &mem->Q_tilde, 0, 0, &mem->Q_bar, 0, 0);
+    blasfeo_dtrtr_l(nx[N], &mem->Q_bar, 0, 0, &mem->Q_bar, 0, 0);
 
     for (ii = N-1; ii >= 0; --ii)
     {
@@ -710,6 +720,10 @@ void ocp_nlp_reg_convexify_regularize_lhs(void *config, ocp_nlp_reg_dims *dims, 
         blasfeo_dsyrk_ln(nx[ii], nu[ii], 1.0, &mem->St_copy, 0, 0, &mem->St_copy, 0, 0, 1.0, &mem->delta_eye, 0, 0, mem->RSQrq[ii], nu[ii], nu[ii]);
 
         blasfeo_dgead(nx[ii], nx[ii], -1.0, mem->RSQrq[ii], nu[ii], nu[ii], &mem->Q_bar, 0, 0);
+
+        // make symmetric
+        blasfeo_dtrtr_l(nx[ii], &mem->Q_bar, 0, 0, &mem->Q_bar, 0, 0);
+
     }
 
     return;
@@ -746,6 +760,7 @@ void ocp_nlp_reg_convexify_regularize_rhs(void *config, ocp_nlp_reg_dims *dims, 
     blasfeo_dgecp(nx[N], nx[N], mem->RSQrq[N], nu[N], nu[N], &mem->Q_bar, 0, 0);
     blasfeo_dgecp(nx[N], nx[N], &mem->Q_tilde, 0, 0, mem->RSQrq[N], nu[N], nu[N]);
     blasfeo_dgead(nx[N], nx[N], -1.0, &mem->Q_tilde, 0, 0, &mem->Q_bar, 0, 0);
+    blasfeo_dtrtr_l(nx[N], &mem->Q_bar, 0, 0, &mem->Q_bar, 0, 0);
 
     for (ii = N-1; ii >= 0; --ii)
     {
@@ -796,6 +811,10 @@ void ocp_nlp_reg_convexify_regularize_rhs(void *config, ocp_nlp_reg_dims *dims, 
         blasfeo_dsyrk_ln(nx[ii], nu[ii], 1.0, &mem->St_copy, 0, 0, &mem->St_copy, 0, 0, 1.0, &mem->delta_eye, 0, 0, mem->RSQrq[ii], nu[ii], nu[ii]);
 
         blasfeo_dgead(nx[ii], nx[ii], -1.0, mem->RSQrq[ii], nu[ii], nu[ii], &mem->Q_bar, 0, 0);
+
+        // make symmetric
+        blasfeo_dtrtr_l(nx[ii], &mem->Q_bar, 0, 0, &mem->Q_bar, 0, 0);
+
     }
 }
 
